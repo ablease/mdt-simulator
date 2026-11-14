@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Revision MDT Simulator</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a two-column meeting room. Left = connection, case sheet and who sits at the table; right = the meeting as it happens, round by round, ending in the chair's decision. */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --sunk: #e9edf1; --fg: #16202b; --muted: #5a6876; --line: #d3dae1;
+  --accent: #1f5f7a; --accent-ink: #ffffff; --warn-bg: #fff4dc; --warn-fg: #6b4a00; --err: #a3271f; --ok: #2e7d4f;
+  --r-surg: #1f5f7a; --r-micro: #6a4c93; --r-rad: #2e7d4f; --r-anaes: #9a5a12; --r-sceptic: #a3271f; --r-chair: #16202b;
+  --font-ui: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f151b; --surface: #17202a; --sunk: #1d2833; --fg: #e3e9ef; --muted: #93a2b1; --line: #2c3a47;
+    --accent: #5fb0d1; --accent-ink: #0b1218; --warn-bg: #2e2510; --warn-fg: #f0cf85; --err: #f08a80; --ok: #6fcf98;
+    --r-surg: #5fb0d1; --r-micro: #b49ae0; --r-rad: #6fcf98; --r-anaes: #e3a35a; --r-sceptic: #f08a80; --r-chair: #e3e9ef;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+header.top { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 70ch; }
+.banner { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+.grid { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.side { display: grid; gap: 16px; }
+h2 { margin: 0; font-size: 13px; font-family: var(--font-mono); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+label.fld { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+select, textarea, input[type=text], input[type=password] { font: inherit; color: var(--fg); background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
+input.mono { font-family: var(--font-mono); font-size: 13px; }
+textarea { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; min-height: 260px; resize: vertical; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+.hint a, .lede a { color: var(--accent); }
+.tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.keyrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; }
+.check input { margin-top: 4px; accent-color: var(--accent); }
+.connstate { font-size: 13px; }
+.connstate.ok { color: var(--ok); } .connstate.bad { color: var(--err); }
+.roles { display: grid; gap: 8px; }
+.role-opt { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.role-opt input { margin-top: 4px; accent-color: var(--accent); }
+.dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; background: var(--c); }
+.role-opt b { display: block; font-size: 14px; }
+.role-opt .desc { font-size: 12.5px; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: inherit; font-weight: 700; border-radius: 6px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); padding: 10px 16px; }
+button.small { font-size: 13px; padding: 6px 10px; font-weight: 600; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.cost { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.meeting { display: grid; gap: 18px; min-width: 0; }
+.status { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.step { font-family: var(--font-mono); font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.step.on { border-color: var(--accent); color: var(--accent); }
+.step.done { background: var(--sunk); color: var(--fg); }
+.round { display: grid; gap: 12px; }
+.round-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.round-head h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.round-head p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.cards.single { grid-template-columns: minmax(0, 1fr); }
+.card { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 8px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card .who { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.card .who b { font-size: 14px; color: var(--c); }
+.card .body { font-size: 14px; overflow-wrap: anywhere; }
+.card .body p { margin: 0 0 8px; }
+.card .body ul { margin: 0 0 8px; padding-left: 18px; }
+.card .body h4 { margin: 10px 0 4px; font-size: 12px; font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.card .body h4:first-child { margin-top: 0; }
+.thinking { color: var(--muted); font-style: italic; }
+.err { color: var(--err); font-size: 13px; }
+details.prompt { font-size: 12.5px; }
+details.prompt summary { cursor: pointer; color: var(--muted); }
+details.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 11.5px; background: var(--sunk); border-radius: 6px; padding: 10px; max-height: 280px; overflow: auto; margin: 8px 0 0; }
+.card.chair { border-top-width: 4px; padding: 20px; }
+.card.chair .body { font-size: 15px; }
+.empty { border: 1px dashed var(--line); border-radius: 10px; padding: 28px; color: var(--muted); display: grid; gap: 14px; }
+.empty ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.empty b { color: var(--fg); }
+footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
+@media (prefers-reduced-motion: no-preference) { .card { animation: rise .25s ease-out both; } @keyframes rise { from { transform: translateY(4px); } to { transform: none; } } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Research prototype · Arthroplasty revision MDT</div>
+    <h1>Revision MDT Simulator</h1>
+    <p class="lede">Several AI "consultants" each give an opinion on a case, read each other's views and argue it out, then a chair records a final decision. Every card is one call to the AI provider using your own API key.</p>
+  </header>
+
+  <div class="banner"><strong>Fictional or fully anonymised cases only.</strong> Text you run here is sent to the AI provider you choose. Do not enter identifiable patient information unless your trust's information governance has approved it. Output is not clinical advice.</div>
+
+  <div class="grid">
+    <aside class="side">
+      <section class="panel" aria-labelledby="conn-h">
+        <h2 id="conn-h">Connect your AI provider</h2>
+        <label class="fld" for="provider">Provider
+          <select id="provider">
+            <option value="openai">OpenAI (ChatGPT's company)</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+          </select>
+        </label>
+        <label class="fld" for="apiKey">API key
+          <div class="keyrow">
+            <input type="password" id="apiKey" class="mono" autocomplete="off" spellcheck="false" placeholder="sk-...">
+            <button class="small" id="showKey" type="button">Show</button>
+          </div>
+        </label>
+        <p class="hint" id="keyHelp"></p>
+        <label class="check" for="remember"><input type="checkbox" id="remember"><span>Remember my key on this computer. It is stored only in this browser and never sent anywhere except the provider.</span></label>
+        <label class="fld" for="model">Model
+          <input type="text" id="model" class="mono" list="modelList" spellcheck="false" autocomplete="off">
+          <datalist id="modelList"></datalist>
+        </label>
+        <div class="row">
+          <button class="small" id="checkBtn" type="button">Check key and list models</button>
+          <button class="small" id="forgetBtn" type="button">Forget key</button>
+        </div>
+        <div class="connstate" id="connState" role="status"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="case-h">
+        <h2 id="case-h">The case</h2>
+        <label class="fld" for="caseSel">Choose a test case
+          <select id="caseSel"></select>
+        </label>
+        <label class="fld" for="caseText"><span>Case summary <span class="tag">editable</span></span>
+          <textarea id="caseText" spellcheck="false"></textarea>
+        </label>
+        <p class="hint">Change any detail (say, the aspirate result) and rerun to see whether the panel changes its mind. Choose "Blank case" to write your own.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="panel-h">
+        <h2 id="panel-h">Who sits at the table</h2>
+        <div class="roles" id="roles"></div>
+        <label class="fld" for="rounds">Rounds of discussion after first opinions
+          <select id="rounds">
+            <option value="1" selected>1 round</option>
+            <option value="2">2 rounds</option>
+          </select>
+        </label>
+        <div class="row">
+          <button class="primary" id="runBtn" type="button">Hold the meeting</button>
+          <button id="stopBtn" type="button" hidden>Stop</button>
+        </div>
+        <div class="cost" id="cost"></div>
+      </section>
+    </aside>
+
+    <main class="meeting">
+      <div class="status" id="statusBar" hidden>
+        <div class="steps" id="steps"></div>
+        <button id="saveBtn" class="small" type="button" hidden>Save transcript (JSON)</button>
+      </div>
+      <div id="roundsOut"></div>
+      <div class="empty" id="emptyState">
+        <b>The meeting hasn't started.</b>
+        <ol>
+          <li><b>First opinions.</b> Each consultant reads the case on their own and gives a view, without seeing anyone else's.</li>
+          <li><b>Discussion.</b> Everyone reads all the other opinions and says where they agree, disagree, or change their mind.</li>
+          <li><b>Chair's decision.</b> The chair reads the whole discussion and writes the outcome, recording any dissent.</li>
+        </ol>
+        <span>Paste your API key, pick a case and press <b>Hold the meeting</b>. A full run makes about 9 to 14 calls and takes a minute or two.</span>
+      </div>
+    </main>
+  </div>
+
+  <footer>This page has no server. It runs entirely in your browser and talks directly to the provider you choose. Your key and your cases are not sent to whoever hosts this page. Usage is billed to your own provider account, so it's sensible to set a monthly spending limit there.</footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------------- providers ----------------
+  const PROVIDERS = {
+    openai: {
+      label: "OpenAI",
+      defaultModel: "gpt-5-mini",
+      suggestions: ["gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini"],
+      keyHelp: 'Get a key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>. This is separate from a ChatGPT subscription: add some credit under Billing first.',
+      keyPrefix: "sk-",
+      async listModels(key, signal) {
+        const r = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: "Bearer " + key }, signal });
+        if (!r.ok) throw await httpError(r);
+        const j = await r.json();
+        return (j.data || []).map((m) => m.id)
+          .filter((id) => /^(gpt|o\d|chatgpt)/i.test(id) && !/(audio|realtime|transcribe|tts|image|search|embedding|instruct|moderation)/i.test(id))
+          .sort();
+      },
+      async stream(key, model, prompt, onText, signal) {
+        const r = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST", signal,
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+          body: JSON.stringify({ model, stream: true, messages: [{ role: "user", content: prompt }] }),
+        });
+        if (!r.ok) throw await httpError(r);
+        let text = "";
+        await readSSE(r, (data) => {
+          if (data === "[DONE]") return;
+          let j; try { j = JSON.parse(data); } catch { return; }
+          if (j.error) throw new ProviderError(j.error.message || "Provider error");
+          const d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+          if (d) { text += d; onText(text); }
+        });
+        return text;
+      },
+    },
+    anthropic: {
+      label: "Anthropic",
+      defaultModel: "claude-sonnet-5-5",
+      suggestions: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5"],
+      keyHelp: 'Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. This is separate from a Claude subscription: add some credit under Billing first.',
+      keyPrefix: "sk-ant-",
+      headers(key) {
+        return { "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+      },
+      async listModels(key, signal) {
+        const r = await fetch("https://api.anthropic.com/v1/models?limit=100", { headers: this.headers(key), signal });
+        if (!r.ok) throw await httpError(r);
+        const j = await r.json();
+        return (j.data || []).map((m) => m.id).sort();
+      },
+      async stream(key, model, prompt, onText, signal) {
+        const r = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST", signal,
+          headers: Object.assign({ "Content-Type": "application/json" }, this.headers(key)),
+          body: JSON.stringify({ model, max_tokens: 2000, stream: true, messages: [{ role: "user", content: prompt }] }),
+        });
+        if (!r.ok) throw await httpError(r);
+        let text = "";
+        await readSSE(r, (data) => {
+          let j; try { j = JSON.parse(data); } catch { return; }
+          if (j.type === "error") throw new ProviderError((j.error && j.error.message) || "Provider error", j.error && j.error.type === "overloaded_error" ? 529 : 0);
+          if (j.type === "content_block_delta" && j.delta && j.delta.type === "text_delta") { text += j.delta.text; onText(text); }
+        });
+        return text;
+      },
+    },
+  };
+
+  class ProviderError extends Error { constructor(msg, status) { super(msg); this.status = status || 0; } }
+  async function httpError(r) {
+    let msg = "";
+    try { const j = await r.json(); msg = (j.error && (j.error.message || j.error.type)) || ""; } catch {}
+    return new ProviderError(msg || ("HTTP " + r.status), r.status);
+  }
+  async function readSSE(response, onData) {
+    const reader = response.body.getReader(); const dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).replace(/\r$/, ""); buf = buf.slice(i + 1);
+        if (line.startsWith("data:")) onData(line.slice(5).trim());
+      }
+    }
+    if (buf.startsWith("data:")) onData(buf.slice(5).trim());
+  }
+  function friendly(e) {
+    if (e.name === "AbortError") return "Stopped.";
+    if (e instanceof TypeError) return "Couldn't reach the provider. Check your internet connection. If you're on a hospital network, it may block AI services.";
+    const s = e.status;
+    if (s === 401) return "The provider rejected the API key. Check you pasted the whole key and chose the right provider.";
+    if (s === 403) return "This key isn't allowed to use that model. Try another model, or check the key's permissions.";
+    if (s === 404) return "The provider doesn't recognise that model name. Press \"Check key and list models\" and pick one from the list.";
+    if (s === 429) return "Rate limit or credit limit reached. New accounts have low limits and need credit added. Wait a minute, or run fewer consultants.";
+    if (s === 400) return "The provider refused the request: " + e.message;
+    if (s >= 500) return "The provider had a temporary problem. Try again in a moment.";
+    return "Something went wrong: " + e.message;
+  }
+
+  // ---------------- storage (best effort) ----------------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+  };
+
+  // ---------------- cases & roles ----------------
+  const CASES = [
+    { id: "pji-hip", title: "Painful hip, possible infection", text:
+`FICTIONAL TEST CASE 1 (invented for prototype testing)
+
+74-year-old woman. Primary uncemented total hip replacement (right) 9 years ago.
+Presenting complaint: 4 months of increasing groin pain, worse on weight-bearing. No wound problems. Was given a 1-week course of oral antibiotics by GP for a "chest infection" 3 weeks before aspiration.
+
+PMH: Type 2 diabetes (HbA1c 64 mmol/mol), BMI 34, hypertension. Independent, walks with one stick, lives with husband.
+
+Bloods: CRP 38 mg/L, ESR 52 mm/hr, WCC 9.1.
+Hip aspirate: synovial WCC 2,400 cells/µL, 78% neutrophils. Cultures x2: no growth at 14 days. Alpha-defensin: not done.
+
+Imaging: radiolucent lines around acetabular component in all three zones with superomedial migration; femoral stem appears well fixed. Acetabular defect estimated Paprosky 2B on CT.
+
+Question for MDT: Septic or aseptic loosening? Single-stage, two-stage, or aseptic acetabular revision?` },
+    { id: "stiff-tkr", title: "Stiff, painful knee replacement", text:
+`FICTIONAL TEST CASE 2 (invented for prototype testing)
+
+68-year-old man. Primary cemented total knee replacement (left) 18 months ago.
+Presenting complaint: persistent anterior and medial knee pain since surgery, stiffness. Never felt the knee was "right". Completed 12 weeks of physiotherapy.
+
+PMH: Hypercholesterolaemia. Ex-smoker. Retired electrician, keen walker.
+
+Examination: well-healed wound, small effusion, ROM 10°–85°, stable to varus/valgus stress. Patellar maltracking noted.
+
+Bloods: CRP 3 mg/L, ESR 11 mm/hr.
+Aspirate: synovial WCC 450 cells/µL, 30% neutrophils, cultures negative.
+
+Imaging: rotational CT shows femoral component internally rotated 6° relative to the transepicondylar axis and tibial component internally rotated 8°. No loosening. Bone scan: non-specific uptake.
+
+Oxford Knee Score: 19/48.
+
+Question for MDT: Is revision for component malrotation indicated, or should this be managed non-operatively?` },
+    { id: "ppf-frail", title: "Fracture around a hip stem, frail patient", text:
+`FICTIONAL TEST CASE 3 (invented for prototype testing)
+
+86-year-old woman. Cemented total hip replacement (left) 14 years ago.
+Presenting complaint: mechanical fall at home yesterday, unable to weight-bear.
+
+PMH: Atrial fibrillation on apixaban (last dose 18 hours ago), CKD stage 3b (eGFR 38), moderate aortic stenosis (valve area 1.1 cm²), mild cognitive impairment. Clinical Frailty Scale 6. Lives alone with carers twice daily, walks with a frame indoors.
+
+Imaging: spiral periprosthetic femoral fracture around the stem tip; cement mantle fractured and stem appears loose. Classified Vancouver B2. Bone stock reasonable for age.
+
+Question for MDT: Revision with a long stem, fixation (ORIF), or non-operative management? Timing and peri-operative plan?` },
+    { id: "dislocate", title: "Repeated hip dislocations", text:
+`FICTIONAL TEST CASE 4 (invented for prototype testing)
+
+61-year-old man. Primary total hip replacement (right) 8 months ago via posterior approach, 32 mm head.
+Presenting complaint: 3 dislocations in the last 6 months, all closed-reduced in ED, all in flexion and internal rotation (e.g. getting out of a low car).
+
+PMH: Previous L3–S1 spinal fusion (stiff spine), BMI 29, otherwise well. Works as a plumber, wants to return to work.
+
+Bloods: CRP 4 mg/L. No signs of infection.
+
+Imaging: CT shows acetabular inclination 52°, anteversion 5°. Femoral stem anteversion 12°. Leg lengths equal. Abductor muscles intact on MRI.
+
+Question for MDT: Which revision strategy: acetabular revision to correct orientation, dual mobility, constrained liner, or a combination?` },
+    { id: "blank", title: "Blank case (write your own)", text:
+`ANONYMISED CASE
+
+Age / sex:
+Index operation and date:
+Presenting complaint:
+
+PMH and function:
+
+Bloods:
+Aspirate / microbiology:
+
+Imaging:
+
+Question for MDT:` },
+  ];
+
+  const ROLES = [
+    { id: "surg", name: "Revision arthroplasty surgeon", c: "var(--r-surg)", on: true,
+      focus: "Surgical options, bone loss, implant choice, feasibility and expected function.",
+      brief: "a consultant orthopaedic surgeon specialising in complex hip and knee revision surgery. You focus on surgical options, bone loss, implant choice, technical feasibility and expected function." },
+    { id: "micro", name: "Consultant microbiologist", c: "var(--r-micro)", on: true,
+      focus: "Whether this is infection, how reliable the tests are, antibiotic strategy.",
+      brief: "a consultant microbiologist with a special interest in bone and joint infection. You focus on whether this is periprosthetic joint infection using accepted diagnostic criteria, the reliability of the tests done, and antibiotic strategy." },
+    { id: "rad", name: "Musculoskeletal radiologist", c: "var(--r-rad)", on: true,
+      focus: "What the imaging shows, how reliable it is, what further imaging would help.",
+      brief: "a consultant musculoskeletal radiologist. You focus on what the imaging does and does not show, how reliable it is, and what further imaging would change management." },
+    { id: "anaes", name: "Peri-operative physician / anaesthetist", c: "var(--r-anaes)", on: true,
+      focus: "Fitness for surgery, risk, optimisation, anticoagulation, frailty, patient goals.",
+      brief: "a consultant anaesthetist and peri-operative physician. You focus on fitness for surgery, risk, optimisation, anticoagulation, frailty, and whether the patient's goals justify the risk." },
+    { id: "sceptic", name: "Devil's advocate", c: "var(--r-sceptic)", on: false,
+      focus: "Argues against the consensus, to stop everyone simply agreeing.",
+      brief: "a senior consultant asked to act as devil's advocate. Your job is to challenge the emerging consensus, argue for the most credible alternative plan (including doing less or nothing), and point out weak evidence or assumptions. Stay clinically credible." },
+  ];
+  const CHAIR = { id: "chair", name: "MDT chair", c: "var(--r-chair)" };
+
+  // ---------------- prompts ----------------
+  const FRAME = "This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.";
+  const firstPrompt = (role, text) =>
+`${FRAME}
+
+You are ${role.brief}
+
+CASE:
+${text}
+
+Give your first opinion independently. Use exactly these short headings, each on its own line starting with "## ":
+## Key concerns
+## What I'd want to know
+## My recommendation
+## Confidence (low / moderate / high, with one line why)
+
+Be specific and concise: under 200 words in total. Bullet points are fine.`;
+  const discussPrompt = (role, text, others, roundNo) =>
+`${FRAME}
+
+You are ${role.brief}
+
+CASE:
+${text}
+
+Discussion round ${roundNo}. These are your colleagues' latest views:
+
+${others}
+
+Respond to your colleagues. Use exactly these headings, each on its own line starting with "## ":
+## Where I agree
+## Where I disagree
+## My position now (say clearly whether it has changed and why)
+
+Engage with specific points colleagues made by naming their specialty. Under 170 words.`;
+  const chairPrompt = (text, transcript) =>
+`${FRAME}
+
+You are the chair of the MDT. You have heard the full discussion below. Your job is to record the MDT outcome as it would appear in the MDT minutes, faithfully reflecting the discussion rather than adding a new opinion of your own.
+
+CASE:
+${text}
+
+DISCUSSION:
+${transcript}
+
+Write the outcome using exactly these headings, each on its own line starting with "## ":
+## MDT decision
+## Rationale
+## Before surgery (investigations or optimisation still needed)
+## Dissent recorded
+## Level of agreement (unanimous / majority / no consensus, and who differed)
+
+Under 280 words.`;
+
+  // ---------------- rendering ----------------
+  const esc = (s) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  function render(md) {
+    let html = "", inList = false;
+    const close = () => { if (inList) { html += "</ul>"; inList = false; } };
+    for (const raw of md.split("\n")) {
+      const line = raw.trim(); let m;
+      if (!line) { close(); continue; }
+      if ((m = line.match(/^#{1,4}\s+(.*)/))) { close(); html += "<h4>" + inline(m[1].replace(/\*\*/g, "")) + "</h4>"; }
+      else if ((m = line.match(/^(?:[-*•]|\d+[.)])\s+(.*)/))) { if (!inList) { html += "<ul>"; inList = true; } html += "<li>" + inline(m[1]) + "</li>"; }
+      else { close(); html += "<p>" + inline(line) + "</p>"; }
+    }
+    close(); return html;
+  }
+
+  // ---------------- DOM ----------------
+  const $ = (id) => document.getElementById(id);
+  const providerSel = $("provider"), keyIn = $("apiKey"), modelIn = $("model"), modelList = $("modelList");
+  const remember = $("remember"), connState = $("connState");
+  const caseSel = $("caseSel"), caseText = $("caseText"), rolesEl = $("roles"), roundsSel = $("rounds");
+  const runBtn = $("runBtn"), stopBtn = $("stopBtn"), saveBtn = $("saveBtn"), costEl = $("cost");
+  const out = $("roundsOut"), emptyState = $("emptyState"), statusBar = $("statusBar"), stepsEl = $("steps");
+
+  const prov = () => PROVIDERS[providerSel.value];
+  const setConn = (msg, cls) => { connState.textContent = msg; connState.className = "connstate" + (cls ? " " + cls : ""); };
+  function fillSuggestions(list) {
+    modelList.innerHTML = "";
+    list.forEach((m) => { const o = document.createElement("option"); o.value = m; modelList.append(o); });
+  }
+  function loadProvider() {
+    const p = prov();
+    $("keyHelp").innerHTML = p.keyHelp;
+    keyIn.placeholder = p.keyPrefix + "...";
+    const savedKey = store.get("mdt.key." + providerSel.value);
+    keyIn.value = savedKey || "";
+    remember.checked = !!savedKey;
+    modelIn.value = store.get("mdt.model." + providerSel.value) || p.defaultModel;
+    fillSuggestions(p.suggestions);
+    setConn("");
+    updateCost();
+  }
+  function persist() {
+    const k = "mdt.key." + providerSel.value;
+    if (remember.checked && keyIn.value.trim()) store.set(k, keyIn.value.trim()); else store.del(k);
+    store.set("mdt.model." + providerSel.value, modelIn.value.trim());
+    store.set("mdt.provider", providerSel.value);
+  }
+
+  const savedProv = store.get("mdt.provider");
+  if (savedProv && PROVIDERS[savedProv]) providerSel.value = savedProv;
+  providerSel.addEventListener("change", () => { store.set("mdt.provider", providerSel.value); loadProvider(); });
+  keyIn.addEventListener("input", () => { persist(); updateCost(); setConn(""); });
+  remember.addEventListener("change", persist);
+  modelIn.addEventListener("change", persist);
+  $("showKey").addEventListener("click", () => {
+    const show = keyIn.type === "password"; keyIn.type = show ? "text" : "password"; $("showKey").textContent = show ? "Hide" : "Show";
+  });
+  $("forgetBtn").addEventListener("click", () => {
+    Object.keys(PROVIDERS).forEach((p) => store.del("mdt.key." + p));
+    keyIn.value = ""; remember.checked = false; setConn("Key cleared from this browser.", ""); updateCost();
+  });
+  $("checkBtn").addEventListener("click", async () => {
+    const key = keyIn.value.trim();
+    if (!key) { setConn("Paste your API key first.", "bad"); return; }
+    setConn("Checking…");
+    try {
+      const models = await prov().listModels(key);
+      if (models.length) fillSuggestions(models);
+      const current = modelIn.value.trim();
+      const note = models.length && current && !models.includes(current) ? ` "${current}" isn't on your list, so click the Model box and pick one.` : "";
+      setConn(`Key works. ${models.length} models available to you.${note}`, note ? "bad" : "ok");
+    } catch (e) { setConn(friendly(e), "bad"); }
+  });
+
+  CASES.forEach((c) => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.title; caseSel.append(o); });
+  caseSel.addEventListener("change", () => { caseText.value = CASES.find((c) => c.id === caseSel.value).text; });
+  caseText.value = CASES[0].text;
+
+  ROLES.forEach((r) => {
+    const l = document.createElement("label"); l.className = "role-opt"; l.style.setProperty("--c", r.c); l.htmlFor = "role-" + r.id;
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "role-" + r.id; cb.checked = r.on;
+    const dot = document.createElement("span"); dot.className = "dot";
+    const txt = document.createElement("span"); const b = document.createElement("b"); b.textContent = r.name;
+    const d = document.createElement("span"); d.className = "desc"; d.textContent = r.focus; txt.append(b, d);
+    l.append(cb, dot, txt); rolesEl.append(l);
+  });
+  const chosen = () => ROLES.filter((r) => $("role-" + r.id).checked);
+
+  let running = false, stopped = false, record = null; const controllers = new Set();
+  function updateCost() {
+    const n = chosen().length, rounds = +roundsSel.value;
+    if (!keyIn.value.trim()) costEl.textContent = "Paste your API key above to start.";
+    else costEl.textContent = n >= 2 ? `${n} consultants × ${1 + rounds} rounds + chair = ${n * (1 + rounds) + 1} AI calls` : "Choose at least two consultants.";
+    runBtn.disabled = running || n < 2 || !keyIn.value.trim();
+  }
+  rolesEl.addEventListener("change", updateCost); roundsSel.addEventListener("change", updateCost);
+
+  // ---------------- meeting ----------------
+  function makeCard(role, prompt, isChair) {
+    const card = document.createElement("article");
+    card.className = "card" + (isChair ? " chair" : ""); card.style.setProperty("--c", role.c);
+    card.innerHTML = '<div class="who"><b></b><span class="tag">waiting</span></div><div class="body"><p class="thinking">Thinking…</p></div><details class="prompt"><summary>Show the exact prompt sent</summary><pre></pre></details>';
+    card.querySelector("b").textContent = role.name;
+    card.querySelector("pre").textContent = prompt;
+    return card;
+  }
+  const sleep = (ms, signal) => new Promise((res, rej) => {
+    const t = setTimeout(res, ms);
+    if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej(new DOMException("Aborted", "AbortError")); }, { once: true });
+  });
+
+  async function call(role, prompt, card, entries, cfg) {
+    const body = card.querySelector(".body"), tag = card.querySelector(".tag");
+    const entry = { role: role.name, prompt, response: null, error: null, started: new Date().toISOString() };
+    entries.push(entry);
+    if (stopped) { body.innerHTML = '<p class="err">Stopped.</p>'; tag.textContent = "stopped"; entry.error = "stopped"; return null; }
+    const ctl = new AbortController(); controllers.add(ctl);
+    tag.textContent = "thinking";
+    let lastText = "";
+    try {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const text = await cfg.provider.stream(cfg.key, cfg.model, prompt, (t) => { lastText = t; body.innerHTML = render(t); tag.textContent = "speaking"; }, ctl.signal);
+          if (!text.trim()) throw new ProviderError("The model returned an empty answer.", 0);
+          body.innerHTML = render(text); tag.textContent = "done";
+          entry.response = text; entry.finished = new Date().toISOString();
+          return text;
+        } catch (e) {
+          const retryable = (e.status === 429 || e.status >= 500) && !lastText && attempt < 2 && !stopped;
+          if (!retryable) throw e;
+          tag.textContent = "retrying"; body.innerHTML = '<p class="thinking">Provider busy, retrying…</p>';
+          await sleep(4000 * (attempt + 1), ctl.signal);
+        }
+      }
+    } catch (e) {
+      entry.error = e.name === "AbortError" ? "stopped" : (e.status ? e.status + ": " : "") + e.message;
+      body.innerHTML = (lastText ? render(lastText) : "") + '<p class="err">' + esc(friendly(e)) + "</p>";
+      tag.textContent = e.name === "AbortError" ? "stopped" : "failed";
+      if (e.status === 401 || e.status === 403 || e.status === 404 || e instanceof TypeError) { stopped = true; controllers.forEach((c) => c.abort()); }
+      return null;
+    } finally { controllers.delete(ctl); }
+  }
+
+  function addRound(title, desc, single) {
+    const sec = document.createElement("section"); sec.className = "round";
+    sec.innerHTML = '<div class="round-head"><h3></h3><p></p></div><div class="cards"></div>';
+    sec.querySelector("h3").textContent = title; sec.querySelector("p").textContent = desc;
+    if (single) sec.querySelector(".cards").classList.add("single");
+    out.append(sec); return sec.querySelector(".cards");
+  }
+  function setSteps(labels, active) {
+    stepsEl.innerHTML = "";
+    labels.forEach((l, i) => { const s = document.createElement("span"); s.className = "step" + (i < active ? " done" : i === active ? " on" : ""); s.textContent = l; stepsEl.append(s); });
+  }
+
+  async function runMeeting() {
+    const roles = chosen(), text = caseText.value.trim(), extra = +roundsSel.value;
+    const cfg = { provider: prov(), key: keyIn.value.trim(), model: modelIn.value.trim() || prov().defaultModel };
+    if (roles.length < 2 || !text || !cfg.key) return;
+    persist();
+    running = true; stopped = false; updateCost();
+    runBtn.textContent = "Meeting in progress…"; stopBtn.hidden = false; saveBtn.hidden = true;
+    emptyState.hidden = true; out.innerHTML = ""; statusBar.hidden = false;
+    const labels = ["First opinions"].concat(Array.from({ length: extra }, (_, i) => "Discussion " + (i + 1)), ["Chair's decision"]);
+    record = {
+      tool: "Revision MDT Simulator (prototype)", note: "Not clinical advice.",
+      provider: cfg.provider.label, model: cfg.model,
+      caseTitle: (CASES.find((c) => c.id === caseSel.value) || {}).title, caseText: text,
+      panel: roles.map((r) => r.name), discussionRounds: extra, startedAt: new Date().toISOString(), rounds: [],
+    };
+
+    setSteps(labels, 0);
+    let cards = addRound("First opinions", "Each consultant reads the case alone. Nobody has seen anyone else's view yet.");
+    let entries = []; record.rounds.push({ name: "First opinions", entries });
+    let latest = {};
+    await Promise.all(roles.map(async (r) => {
+      const p = firstPrompt(r, text), card = makeCard(r, p); cards.append(card);
+      const t = await call(r, p, card, entries, cfg); if (t) latest[r.id] = t;
+    }));
+
+    for (let k = 1; k <= extra && !stopped; k++) {
+      setSteps(labels, k);
+      cards = addRound("Discussion " + k, "Everyone has now read all the other opinions and responds to them.");
+      entries = []; record.rounds.push({ name: "Discussion " + k, entries });
+      const snapshot = Object.assign({}, latest), next = {};
+      await Promise.all(roles.map(async (r) => {
+        const others = roles.filter((o) => o.id !== r.id && snapshot[o.id]).map((o) => "### " + o.name + "\n" + snapshot[o.id]).join("\n\n") || "(No colleague opinions were available.)";
+        const p = discussPrompt(r, text, others, k), card = makeCard(r, p); cards.append(card);
+        const t = await call(r, p, card, entries, cfg); next[r.id] = t || snapshot[r.id];
+      }));
+      latest = next;
+    }
+
+    if (!stopped) {
+      setSteps(labels, labels.length - 1);
+      cards = addRound("Chair's decision", "The chair reads the whole discussion and records the outcome.", true);
+      entries = []; record.rounds.push({ name: "Chair's decision", entries });
+      const transcript = record.rounds.slice(0, -1).map((rd) => "=== " + rd.name + " ===\n" + rd.entries.filter((e) => e.response).map((e) => "### " + e.role + "\n" + e.response).join("\n\n")).join("\n\n");
+      const p = chairPrompt(text, transcript), card = makeCard(CHAIR, p, true); cards.append(card);
+      await call(CHAIR, p, card, entries, cfg);
+    }
+    setSteps(labels, stopped ? -1 : labels.length);
+    record.finishedAt = new Date().toISOString(); record.stoppedEarly = stopped;
+    running = false; runBtn.textContent = "Hold the meeting again"; stopBtn.hidden = true; saveBtn.hidden = false;
+    updateCost();
+  }
+
+  runBtn.addEventListener("click", runMeeting);
+  stopBtn.addEventListener("click", () => { stopped = true; controllers.forEach((c) => c.abort()); });
+  saveBtn.addEventListener("click", () => {
+    if (!record) return;
+    const name = "mdt-" + (caseSel.value || "case") + "-" + record.startedAt.slice(0, 16).replace(/[:T]/g, "-") + ".json";
+    const url = URL.createObjectURL(new Blob([JSON.stringify(record, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  loadProvider();
+})();
+</script>
+</body>
+</html>
