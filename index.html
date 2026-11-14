@@ -34,42 +34,56 @@ header.top { display: grid; gap: 6px; }
 h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; }
 .lede { margin: 0; color: var(--muted); max-width: 70ch; }
 .banner { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
-.grid { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.grid { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
-.side { display: grid; gap: 16px; }
+.side { display: grid; gap: 16px; min-width: 0; }
 h2 { margin: 0; font-size: 13px; font-family: var(--font-mono); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-label.fld { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+label.fld, .fld { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
 select, textarea, input[type=text], input[type=password] { font: inherit; color: var(--fg); background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
+select.compact { padding: 5px 8px; font-size: 13px; }
 input.mono { font-family: var(--font-mono); font-size: 13px; }
 textarea { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; min-height: 260px; resize: vertical; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; font-weight: 400; }
 .hint a, .lede a { color: var(--accent); }
-.tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
-.keyrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; font-weight: 400; }
+.keyblock { display: grid; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.keyrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
 .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; }
 .check input { margin-top: 4px; accent-color: var(--accent); }
-.connstate { font-size: 13px; }
+.connstate { font-size: 13px; font-weight: 400; }
+.connstate:empty { display: none; }
 .connstate.ok { color: var(--ok); } .connstate.bad { color: var(--err); }
+details.more summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+details.more[open] { display: grid; gap: 8px; }
+.addrow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; margin-top: 8px; }
 .roles { display: grid; gap: 8px; }
-.role-opt { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
-.role-opt input { margin-top: 4px; accent-color: var(--accent); }
+.role-opt { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; }
+.role-main { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 10px; align-items: start; cursor: pointer; }
+.role-main.fixed { cursor: default; grid-template-columns: 13px auto minmax(0, 1fr); }
+.role-main input { margin-top: 4px; accent-color: var(--accent); }
 .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; background: var(--c); }
-.role-opt b { display: block; font-size: 14px; }
-.role-opt .desc { font-size: 12.5px; color: var(--muted); }
+.role-main b { display: block; font-size: 14px; }
+.role-main .desc { font-size: 12.5px; color: var(--muted); }
+.role-model { padding-left: 46px; }
+.role-opt.off .role-model { opacity: .5; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 button { font: inherit; font-weight: 700; border-radius: 6px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
 button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); padding: 10px 16px; }
 button.small { font-size: 13px; padding: 6px 10px; font-weight: 600; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 .cost { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.cost.bad { color: var(--err); }
 .meeting { display: grid; gap: 18px; min-width: 0; }
 .status { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
 .steps { display: flex; flex-wrap: wrap; gap: 6px; }
 .step { font-family: var(--font-mono); font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 .step.on { border-color: var(--accent); color: var(--accent); }
 .step.done { background: var(--sunk); color: var(--fg); }
+.savers { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.saveNote { font-size: 12.5px; color: var(--muted); }
+.saveNote.bad { color: var(--err); }
 .round { display: grid; gap: 12px; }
 .round-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .round-head h3 { margin: 0; font-size: 18px; font-weight: 700; }
@@ -78,7 +92,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .cards.single { grid-template-columns: minmax(0, 1fr); }
 .card { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 8px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .card .who { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-.card .who b { font-size: 14px; color: var(--c); }
+.card .who b { font-size: 14px; color: var(--c); display: block; }
+.card .who .mdl { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
 .card .body { font-size: 14px; overflow-wrap: anywhere; }
 .card .body p { margin: 0 0 8px; }
 .card .body ul { margin: 0 0 8px; padding-left: 18px; }
@@ -95,6 +110,7 @@ details.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family
 .empty ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .empty b { color: var(--fg); }
 footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
+@media (max-width: 480px) { .role-model { padding-left: 0; } .keyrow { grid-template-columns: minmax(0, 1fr) auto; } .keyrow .chk { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: no-preference) { .card { animation: rise .25s ease-out both; } @keyframes rise { from { transform: translateY(4px); } to { transform: none; } } }
 </style>
 </head>
@@ -103,38 +119,32 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
   <header class="top">
     <div class="eyebrow">Research prototype · Arthroplasty revision MDT</div>
     <h1>Revision MDT Simulator</h1>
-    <p class="lede">Several AI "consultants" each give an opinion on a case, read each other's views and argue it out, then a chair records a final decision. Every card is one call to the AI provider using your own API key.</p>
+    <p class="lede">Several AI "consultants" each give an opinion on a case, read each other's views and argue it out, then a chair records a final decision. Every card is one call to an AI provider using your own API key, and each seat at the table can use a different model.</p>
   </header>
 
-  <div class="banner"><strong>Fictional or fully anonymised cases only.</strong> Text you run here is sent to the AI provider you choose. Do not enter identifiable patient information unless your trust's information governance has approved it. Output is not clinical advice.</div>
+  <div class="banner"><strong>Fictional or fully anonymised cases only.</strong> Text you run here is sent to the AI providers you choose. Do not enter identifiable patient information unless your trust's information governance has approved it. Output is not clinical advice.</div>
 
   <div class="grid">
     <aside class="side">
       <section class="panel" aria-labelledby="conn-h">
-        <h2 id="conn-h">Connect your AI provider</h2>
-        <label class="fld" for="provider">Provider
-          <select id="provider">
-            <option value="openai">OpenAI (ChatGPT's company)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-          </select>
+        <h2 id="conn-h">Your API keys</h2>
+        <p class="hint">Add a key for one provider, or both if you want consultants on different providers.</p>
+        <div id="keyBlocks"></div>
+        <label class="check" for="remember"><input type="checkbox" id="remember"><span>Remember my keys on this computer. They are stored only in this browser and never sent anywhere except the provider they belong to.</span></label>
+        <div class="row"><button class="small" id="forgetBtn" type="button">Forget keys</button></div>
+        <label class="fld" for="defaultModel">Default model
+          <select id="defaultModel"></select>
+          <span class="hint">Used by every seat set to "Default model" below.</span>
         </label>
-        <label class="fld" for="apiKey">API key
-          <div class="keyrow">
-            <input type="password" id="apiKey" class="mono" autocomplete="off" spellcheck="false" placeholder="sk-...">
-            <button class="small" id="showKey" type="button">Show</button>
+        <details class="more">
+          <summary>Model not in the list?</summary>
+          <p class="hint">Type the exact model name from your provider's documentation and add it.</p>
+          <div class="addrow">
+            <select id="addProv" class="compact" aria-label="Provider for the new model"></select>
+            <input type="text" id="addName" class="mono" spellcheck="false" autocomplete="off" placeholder="model-name" aria-label="Model name">
+            <button class="small" id="addBtn" type="button">Add</button>
           </div>
-        </label>
-        <p class="hint" id="keyHelp"></p>
-        <label class="check" for="remember"><input type="checkbox" id="remember"><span>Remember my key on this computer. It is stored only in this browser and never sent anywhere except the provider.</span></label>
-        <label class="fld" for="model">Model
-          <input type="text" id="model" class="mono" list="modelList" spellcheck="false" autocomplete="off">
-          <datalist id="modelList"></datalist>
-        </label>
-        <div class="row">
-          <button class="small" id="checkBtn" type="button">Check key and list models</button>
-          <button class="small" id="forgetBtn" type="button">Forget key</button>
-        </div>
-        <div class="connstate" id="connState" role="status"></div>
+        </details>
       </section>
 
       <section class="panel" aria-labelledby="case-h">
@@ -161,14 +171,18 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
           <button class="primary" id="runBtn" type="button">Hold the meeting</button>
           <button id="stopBtn" type="button" hidden>Stop</button>
         </div>
-        <div class="cost" id="cost"></div>
+        <div class="cost" id="cost" role="status"></div>
       </section>
     </aside>
 
     <main class="meeting">
       <div class="status" id="statusBar" hidden>
         <div class="steps" id="steps"></div>
-        <button id="saveBtn" class="small" type="button" hidden>Save transcript (JSON)</button>
+        <div class="savers" id="savers" hidden>
+          <button id="pdfBtn" class="small" type="button">Download PDF</button>
+          <button id="jsonBtn" class="small" type="button">Download JSON</button>
+          <span class="saveNote" id="saveNote" role="status"></span>
+        </div>
       </div>
       <div id="roundsOut"></div>
       <div class="empty" id="emptyState">
@@ -178,28 +192,33 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
           <li><b>Discussion.</b> Everyone reads all the other opinions and says where they agree, disagree, or change their mind.</li>
           <li><b>Chair's decision.</b> The chair reads the whole discussion and writes the outcome, recording any dissent.</li>
         </ol>
-        <span>Paste your API key, pick a case and press <b>Hold the meeting</b>. A full run makes about 9 to 14 calls and takes a minute or two.</span>
+        <span>Add an API key, pick a case and press <b>Hold the meeting</b>. A full run makes about 9 to 14 calls and takes a minute or two. Afterwards you can download the meeting as a PDF report or as JSON data.</span>
       </div>
     </main>
   </div>
 
-  <footer>This page has no server. It runs entirely in your browser and talks directly to the provider you choose. Your key and your cases are not sent to whoever hosts this page. Usage is billed to your own provider account, so it's sensible to set a monthly spending limit there.</footer>
+  <footer>This page has no server. It runs entirely in your browser and talks directly to the providers you choose. Your keys and your cases are not sent to whoever hosts this page. Usage is billed to your own provider accounts, so it's sensible to set a monthly spending limit there.</footer>
 </div>
 
 <script>
 (() => {
   "use strict";
 
+  const PDFMAKE_URLS = [
+    "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js",
+  ];
+
   // ---------------- providers ----------------
   const PROVIDERS = {
     openai: {
       label: "OpenAI",
-      defaultModel: "gpt-5-mini",
       suggestions: ["gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini"],
-      keyHelp: 'Get a key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>. This is separate from a ChatGPT subscription: add some credit under Billing first.',
+      defaultModel: "gpt-5-mini",
+      keyHelp: 'Get one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>. Separate from ChatGPT: add credit under Billing first.',
       keyPrefix: "sk-",
-      async listModels(key, signal) {
-        const r = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: "Bearer " + key }, signal });
+      async listModels(key) {
+        const r = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: "Bearer " + key } });
         if (!r.ok) throw await httpError(r);
         const j = await r.json();
         return (j.data || []).map((m) => m.id)
@@ -226,15 +245,15 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
     },
     anthropic: {
       label: "Anthropic",
-      defaultModel: "claude-sonnet-5-5",
       suggestions: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5"],
-      keyHelp: 'Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. This is separate from a Claude subscription: add some credit under Billing first.',
+      defaultModel: "claude-sonnet-5-5",
+      keyHelp: 'Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Separate from a Claude subscription: add credit under Billing first.',
       keyPrefix: "sk-ant-",
       headers(key) {
         return { "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
       },
-      async listModels(key, signal) {
-        const r = await fetch("https://api.anthropic.com/v1/models?limit=100", { headers: this.headers(key), signal });
+      async listModels(key) {
+        const r = await fetch("https://api.anthropic.com/v1/models?limit=100", { headers: this.headers(key) });
         if (!r.ok) throw await httpError(r);
         const j = await r.json();
         return (j.data || []).map((m) => m.id).sort();
@@ -256,6 +275,7 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
       },
     },
   };
+  const PIDS = Object.keys(PROVIDERS);
 
   class ProviderError extends Error { constructor(msg, status) { super(msg); this.status = status || 0; } }
   async function httpError(r) {
@@ -277,16 +297,17 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
     }
     if (buf.startsWith("data:")) onData(buf.slice(5).trim());
   }
-  function friendly(e) {
+  function friendly(e, provLabel) {
+    const who = provLabel || "The provider";
     if (e.name === "AbortError") return "Stopped.";
-    if (e instanceof TypeError) return "Couldn't reach the provider. Check your internet connection. If you're on a hospital network, it may block AI services.";
+    if (e instanceof TypeError) return "Couldn't reach " + who + ". Check your internet connection. If you're on a hospital network, it may block AI services.";
     const s = e.status;
-    if (s === 401) return "The provider rejected the API key. Check you pasted the whole key and chose the right provider.";
-    if (s === 403) return "This key isn't allowed to use that model. Try another model, or check the key's permissions.";
-    if (s === 404) return "The provider doesn't recognise that model name. Press \"Check key and list models\" and pick one from the list.";
-    if (s === 429) return "Rate limit or credit limit reached. New accounts have low limits and need credit added. Wait a minute, or run fewer consultants.";
-    if (s === 400) return "The provider refused the request: " + e.message;
-    if (s >= 500) return "The provider had a temporary problem. Try again in a moment.";
+    if (s === 401) return who + " rejected the API key. Check you pasted the whole key into the right box.";
+    if (s === 403) return "This " + who + " key isn't allowed to use that model. Try another model, or check the key's permissions.";
+    if (s === 404) return who + " doesn't recognise that model name. Press \"Check\" next to the key and pick a model from the list.";
+    if (s === 429) return who + ": rate limit or credit limit reached. New accounts have low limits and need credit added. Wait a minute, or run fewer consultants on this provider.";
+    if (s === 400) return who + " refused the request: " + e.message;
+    if (s >= 500) return who + " had a temporary problem. Try again in a moment.";
     return "Something went wrong: " + e.message;
   }
 
@@ -295,6 +316,8 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch {} },
     del(k) { try { localStorage.removeItem(k); } catch {} },
+    getJSON(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } },
+    setJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
   };
 
   // ---------------- cases & roles ----------------
@@ -373,23 +396,26 @@ Question for MDT:` },
   ];
 
   const ROLES = [
-    { id: "surg", name: "Revision arthroplasty surgeon", c: "var(--r-surg)", on: true,
+    { id: "surg", name: "Revision arthroplasty surgeon", c: "var(--r-surg)", pdf: "#1f5f7a", on: true,
       focus: "Surgical options, bone loss, implant choice, feasibility and expected function.",
       brief: "a consultant orthopaedic surgeon specialising in complex hip and knee revision surgery. You focus on surgical options, bone loss, implant choice, technical feasibility and expected function." },
-    { id: "micro", name: "Consultant microbiologist", c: "var(--r-micro)", on: true,
+    { id: "micro", name: "Consultant microbiologist", c: "var(--r-micro)", pdf: "#6a4c93", on: true,
       focus: "Whether this is infection, how reliable the tests are, antibiotic strategy.",
       brief: "a consultant microbiologist with a special interest in bone and joint infection. You focus on whether this is periprosthetic joint infection using accepted diagnostic criteria, the reliability of the tests done, and antibiotic strategy." },
-    { id: "rad", name: "Musculoskeletal radiologist", c: "var(--r-rad)", on: true,
+    { id: "rad", name: "Musculoskeletal radiologist", c: "var(--r-rad)", pdf: "#2e7d4f", on: true,
       focus: "What the imaging shows, how reliable it is, what further imaging would help.",
       brief: "a consultant musculoskeletal radiologist. You focus on what the imaging does and does not show, how reliable it is, and what further imaging would change management." },
-    { id: "anaes", name: "Peri-operative physician / anaesthetist", c: "var(--r-anaes)", on: true,
+    { id: "anaes", name: "Peri-operative physician / anaesthetist", c: "var(--r-anaes)", pdf: "#9a5a12", on: true,
       focus: "Fitness for surgery, risk, optimisation, anticoagulation, frailty, patient goals.",
       brief: "a consultant anaesthetist and peri-operative physician. You focus on fitness for surgery, risk, optimisation, anticoagulation, frailty, and whether the patient's goals justify the risk." },
-    { id: "sceptic", name: "Devil's advocate", c: "var(--r-sceptic)", on: false,
+    { id: "sceptic", name: "Devil's advocate", c: "var(--r-sceptic)", pdf: "#a3271f", on: false,
       focus: "Argues against the consensus, to stop everyone simply agreeing.",
       brief: "a senior consultant asked to act as devil's advocate. Your job is to challenge the emerging consensus, argue for the most credible alternative plan (including doing less or nothing), and point out weak evidence or assumptions. Stay clinically credible." },
   ];
-  const CHAIR = { id: "chair", name: "MDT chair", c: "var(--r-chair)" };
+  const CHAIR = { id: "chair", name: "MDT chair", c: "var(--r-chair)", pdf: "#16202b",
+    focus: "Always attends. Reads the whole discussion and records the outcome.",
+    brief: "the chair of the MDT, recording the outcome as it would appear in the MDT minutes, faithfully reflecting the discussion rather than adding a new opinion." };
+  const ALL_SEATS = ROLES.concat([CHAIR]);
 
   // ---------------- prompts ----------------
   const FRAME = "This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.";
@@ -446,121 +472,194 @@ Write the outcome using exactly these headings, each on its own line starting wi
 
 Under 280 words.`;
 
-  // ---------------- rendering ----------------
+  // ---------------- markdown-lite ----------------
   const esc = (s) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
   const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  function render(md) {
-    let html = "", inList = false;
-    const close = () => { if (inList) { html += "</ul>"; inList = false; } };
+  function parseMd(md) {
+    // -> [{t:'h',text} | {t:'p',text} | {t:'ul',items:[text]}]
+    const blocks = []; let list = null;
     for (const raw of md.split("\n")) {
       const line = raw.trim(); let m;
-      if (!line) { close(); continue; }
-      if ((m = line.match(/^#{1,4}\s+(.*)/))) { close(); html += "<h4>" + inline(m[1].replace(/\*\*/g, "")) + "</h4>"; }
-      else if ((m = line.match(/^(?:[-*•]|\d+[.)])\s+(.*)/))) { if (!inList) { html += "<ul>"; inList = true; } html += "<li>" + inline(m[1]) + "</li>"; }
-      else { close(); html += "<p>" + inline(line) + "</p>"; }
+      if (!line) { list = null; continue; }
+      if ((m = line.match(/^#{1,4}\s+(.*)/))) { list = null; blocks.push({ t: "h", text: m[1].replace(/\*\*/g, "") }); }
+      else if ((m = line.match(/^(?:[-*•]|\d+[.)])\s+(.*)/))) { if (!list) { list = { t: "ul", items: [] }; blocks.push(list); } list.items.push(m[1]); }
+      else { list = null; blocks.push({ t: "p", text: line }); }
     }
-    close(); return html;
+    return blocks;
+  }
+  function render(md) {
+    return parseMd(md).map((b) => b.t === "h" ? "<h4>" + esc(b.text) + "</h4>"
+      : b.t === "ul" ? "<ul>" + b.items.map((i) => "<li>" + inline(i) + "</li>").join("") + "</ul>"
+      : "<p>" + inline(b.text) + "</p>").join("");
   }
 
   // ---------------- DOM ----------------
   const $ = (id) => document.getElementById(id);
-  const providerSel = $("provider"), keyIn = $("apiKey"), modelIn = $("model"), modelList = $("modelList");
-  const remember = $("remember"), connState = $("connState");
+  const remember = $("remember"), defaultSel = $("defaultModel"), keyBlocks = $("keyBlocks");
   const caseSel = $("caseSel"), caseText = $("caseText"), rolesEl = $("roles"), roundsSel = $("rounds");
-  const runBtn = $("runBtn"), stopBtn = $("stopBtn"), saveBtn = $("saveBtn"), costEl = $("cost");
+  const runBtn = $("runBtn"), stopBtn = $("stopBtn"), costEl = $("cost");
   const out = $("roundsOut"), emptyState = $("emptyState"), statusBar = $("statusBar"), stepsEl = $("steps");
+  const savers = $("savers"), saveNote = $("saveNote");
 
-  const prov = () => PROVIDERS[providerSel.value];
-  const setConn = (msg, cls) => { connState.textContent = msg; connState.className = "connstate" + (cls ? " " + cls : ""); };
-  function fillSuggestions(list) {
-    modelList.innerHTML = "";
-    list.forEach((m) => { const o = document.createElement("option"); o.value = m; modelList.append(o); });
-  }
-  function loadProvider() {
-    const p = prov();
-    $("keyHelp").innerHTML = p.keyHelp;
-    keyIn.placeholder = p.keyPrefix + "...";
-    const savedKey = store.get("mdt.key." + providerSel.value);
-    keyIn.value = savedKey || "";
-    remember.checked = !!savedKey;
-    modelIn.value = store.get("mdt.model." + providerSel.value) || p.defaultModel;
-    fillSuggestions(p.suggestions);
-    setConn("");
-    updateCost();
-  }
-  function persist() {
-    const k = "mdt.key." + providerSel.value;
-    if (remember.checked && keyIn.value.trim()) store.set(k, keyIn.value.trim()); else store.del(k);
-    store.set("mdt.model." + providerSel.value, modelIn.value.trim());
-    store.set("mdt.provider", providerSel.value);
-  }
-
-  const savedProv = store.get("mdt.provider");
-  if (savedProv && PROVIDERS[savedProv]) providerSel.value = savedProv;
-  providerSel.addEventListener("change", () => { store.set("mdt.provider", providerSel.value); loadProvider(); });
-  keyIn.addEventListener("input", () => { persist(); updateCost(); setConn(""); });
-  remember.addEventListener("change", persist);
-  modelIn.addEventListener("change", persist);
-  $("showKey").addEventListener("click", () => {
-    const show = keyIn.type === "password"; keyIn.type = show ? "text" : "password"; $("showKey").textContent = show ? "Hide" : "Show";
+  // ---------------- keys ----------------
+  const keyInputs = {};
+  remember.checked = store.get("mdt.remember") === "1" || PIDS.some((p) => store.get("mdt.key." + p));
+  PIDS.forEach((pid) => {
+    const p = PROVIDERS[pid];
+    const wrap = document.createElement("div"); wrap.className = "keyblock";
+    wrap.innerHTML =
+      '<label class="fld" for="key-' + pid + '">' + p.label + ' API key</label>' +
+      '<div class="keyrow"><input type="password" id="key-' + pid + '" class="mono" autocomplete="off" spellcheck="false" placeholder="' + p.keyPrefix + '...">' +
+      '<button class="small" type="button" data-show>Show</button><button class="small chk" type="button" data-check>Check</button></div>' +
+      '<p class="hint">' + p.keyHelp + '</p><div class="connstate" role="status"></div>';
+    keyBlocks.append(wrap);
+    const input = wrap.querySelector("input"), state = wrap.querySelector(".connstate");
+    keyInputs[pid] = input;
+    input.value = store.get("mdt.key." + pid) || "";
+    const setState = (msg, cls) => { state.textContent = msg; state.className = "connstate" + (cls ? " " + cls : ""); };
+    input.addEventListener("input", () => { persistKeys(); setState(""); refreshModelSelects(); updateCost(); });
+    wrap.querySelector("[data-show]").addEventListener("click", (ev) => {
+      const show = input.type === "password"; input.type = show ? "text" : "password"; ev.target.textContent = show ? "Hide" : "Show";
+    });
+    wrap.querySelector("[data-check]").addEventListener("click", async () => {
+      const key = input.value.trim();
+      if (!key) { setState("Paste your " + p.label + " key first.", "bad"); return; }
+      setState("Checking…");
+      try {
+        const models = await p.listModels(key);
+        if (models.length) { store.setJSON("mdt.models." + pid, models); }
+        refreshModelSelects();
+        const used = usedModels().filter((c) => c.pid === pid && models.length && !models.includes(c.model)).map((c) => c.model);
+        const note = used.length ? ` Not available to you: ${[...new Set(used)].join(", ")}. Pick another from the model menus.` : "";
+        setState(`Key works. ${models.length} ${p.label} models available to you, now in the model menus.${note}`, note ? "bad" : "ok");
+      } catch (e) { setState(friendly(e, p.label), "bad"); }
+    });
   });
+  function persistKeys() {
+    store.set("mdt.remember", remember.checked ? "1" : "0");
+    PIDS.forEach((pid) => {
+      const v = keyInputs[pid].value.trim();
+      if (remember.checked && v) store.set("mdt.key." + pid, v); else store.del("mdt.key." + pid);
+    });
+  }
+  remember.addEventListener("change", persistKeys);
   $("forgetBtn").addEventListener("click", () => {
-    Object.keys(PROVIDERS).forEach((p) => store.del("mdt.key." + p));
-    keyIn.value = ""; remember.checked = false; setConn("Key cleared from this browser.", ""); updateCost();
+    PIDS.forEach((pid) => { store.del("mdt.key." + pid); keyInputs[pid].value = ""; });
+    remember.checked = false; store.set("mdt.remember", "0");
+    refreshModelSelects(); updateCost();
+    costEl.textContent = "Keys cleared from this browser."; costEl.className = "cost";
   });
-  $("checkBtn").addEventListener("click", async () => {
-    const key = keyIn.value.trim();
-    if (!key) { setConn("Paste your API key first.", "bad"); return; }
-    setConn("Checking…");
-    try {
-      const models = await prov().listModels(key);
-      if (models.length) fillSuggestions(models);
-      const current = modelIn.value.trim();
-      const note = models.length && current && !models.includes(current) ? ` "${current}" isn't on your list, so click the Model box and pick one.` : "";
-      setConn(`Key works. ${models.length} models available to you.${note}`, note ? "bad" : "ok");
-    } catch (e) { setConn(friendly(e), "bad"); }
+  const hasKey = (pid) => !!keyInputs[pid].value.trim();
+
+  // ---------------- models ----------------
+  // a "choice" is "pid|model"; "" on a seat means "use default"
+  const enc = (pid, model) => pid + "|" + model;
+  const dec = (v) => { const i = v.indexOf("|"); return { pid: v.slice(0, i), model: v.slice(i + 1) }; };
+  const describe = (c) => PROVIDERS[c.pid].label + " · " + c.model;
+  function modelsFor(pid) {
+    const loaded = store.getJSON("mdt.models." + pid, []);
+    const custom = store.getJSON("mdt.custom." + pid, []);
+    const base = loaded.length ? loaded : PROVIDERS[pid].suggestions;
+    return [...new Set(custom.concat(base))].sort();
+  }
+  let seatChoice = store.getJSON("mdt.seats", {});
+  let defaultChoice = store.get("mdt.default");
+  if (!defaultChoice) { // migrate from the single-provider version
+    const oldP = store.get("mdt.provider"); const pid = PROVIDERS[oldP] ? oldP : "openai";
+    defaultChoice = enc(pid, store.get("mdt.model." + pid) || PROVIDERS[pid].defaultModel);
+  }
+  function fillModelSelect(sel, current, withDefault) {
+    sel.innerHTML = "";
+    if (withDefault) {
+      const o = document.createElement("option"); o.value = ""; o.textContent = "Default model (" + describe(dec(defaultChoice)) + ")"; sel.append(o);
+    }
+    PIDS.forEach((pid) => {
+      const g = document.createElement("optgroup"); g.label = PROVIDERS[pid].label + (hasKey(pid) ? "" : " (add a key to use)");
+      const list = modelsFor(pid);
+      if (current && current.startsWith(pid + "|") && !list.includes(dec(current).model)) list.unshift(dec(current).model);
+      list.forEach((m) => { const o = document.createElement("option"); o.value = enc(pid, m); o.textContent = m; g.append(o); });
+      sel.append(g);
+    });
+    sel.value = current || "";
+  }
+  function refreshModelSelects() {
+    fillModelSelect(defaultSel, defaultChoice, false);
+    ALL_SEATS.forEach((r) => fillModelSelect($("model-" + r.id), seatChoice[r.id] || "", true));
+  }
+  defaultSel.addEventListener("change", () => { defaultChoice = defaultSel.value; store.set("mdt.default", defaultChoice); refreshModelSelects(); updateCost(); });
+  const addProv = $("addProv");
+  PIDS.forEach((pid) => { const o = document.createElement("option"); o.value = pid; o.textContent = PROVIDERS[pid].label; addProv.append(o); });
+  $("addBtn").addEventListener("click", () => {
+    const name = $("addName").value.trim(); if (!name) return;
+    const pid = addProv.value, list = store.getJSON("mdt.custom." + pid, []);
+    if (!list.includes(name)) list.push(name);
+    store.setJSON("mdt.custom." + pid, list);
+    $("addName").value = ""; refreshModelSelects();
   });
 
+  // ---------------- seats ----------------
+  function seatRow(r, fixed) {
+    const div = document.createElement("div"); div.className = "role-opt"; div.style.setProperty("--c", r.c);
+    const main = document.createElement(fixed ? "div" : "label"); main.className = "role-main" + (fixed ? " fixed" : "");
+    if (fixed) main.append(document.createElement("span"));
+    else { main.htmlFor = "role-" + r.id; const cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "role-" + r.id; cb.checked = r.on; main.append(cb); }
+    const dot = document.createElement("span"); dot.className = "dot";
+    const txt = document.createElement("span"); const b = document.createElement("b"); b.textContent = r.name;
+    const d = document.createElement("span"); d.className = "desc"; d.textContent = r.focus; txt.append(b, d);
+    main.append(dot, txt);
+    const mrow = document.createElement("div"); mrow.className = "role-model";
+    const sel = document.createElement("select"); sel.className = "compact"; sel.id = "model-" + r.id; sel.setAttribute("aria-label", "Model for " + r.name);
+    sel.addEventListener("change", () => { if (sel.value) seatChoice[r.id] = sel.value; else delete seatChoice[r.id]; store.setJSON("mdt.seats", seatChoice); updateCost(); });
+    mrow.append(sel); div.append(main, mrow); rolesEl.append(div);
+  }
+  ROLES.forEach((r) => seatRow(r, false));
+  seatRow(CHAIR, true);
+  const chosen = () => ROLES.filter((r) => $("role-" + r.id).checked);
+  const choiceFor = (r) => dec(seatChoice[r.id] || defaultChoice);
+  const usedModels = () => chosen().concat([CHAIR]).map(choiceFor);
+
+  // ---------------- cases ----------------
   CASES.forEach((c) => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.title; caseSel.append(o); });
   caseSel.addEventListener("change", () => { caseText.value = CASES.find((c) => c.id === caseSel.value).text; });
   caseText.value = CASES[0].text;
 
-  ROLES.forEach((r) => {
-    const l = document.createElement("label"); l.className = "role-opt"; l.style.setProperty("--c", r.c); l.htmlFor = "role-" + r.id;
-    const cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "role-" + r.id; cb.checked = r.on;
-    const dot = document.createElement("span"); dot.className = "dot";
-    const txt = document.createElement("span"); const b = document.createElement("b"); b.textContent = r.name;
-    const d = document.createElement("span"); d.className = "desc"; d.textContent = r.focus; txt.append(b, d);
-    l.append(cb, dot, txt); rolesEl.append(l);
-  });
-  const chosen = () => ROLES.filter((r) => $("role-" + r.id).checked);
-
+  // ---------------- run state ----------------
   let running = false, stopped = false, record = null; const controllers = new Set();
   function updateCost() {
+    ROLES.forEach((r) => $("role-" + r.id).closest(".role-opt").classList.toggle("off", !$("role-" + r.id).checked));
     const n = chosen().length, rounds = +roundsSel.value;
-    if (!keyIn.value.trim()) costEl.textContent = "Paste your API key above to start.";
-    else costEl.textContent = n >= 2 ? `${n} consultants × ${1 + rounds} rounds + chair = ${n * (1 + rounds) + 1} AI calls` : "Choose at least two consultants.";
-    runBtn.disabled = running || n < 2 || !keyIn.value.trim();
+    const missing = [...new Set(usedModels().filter((c) => !hasKey(c.pid)).map((c) => PROVIDERS[c.pid].label))];
+    let msg, bad = false;
+    if (n < 2) { msg = "Choose at least two consultants."; bad = true; }
+    else if (missing.length) { msg = "Add your " + missing.join(" and ") + " API key, or switch those seats to a provider you have a key for."; bad = true; }
+    else {
+      const provs = [...new Set(usedModels().map((c) => PROVIDERS[c.pid].label))];
+      msg = `${n} consultants × ${1 + rounds} rounds + chair = ${n * (1 + rounds) + 1} AI calls on ${provs.join(" and ")}`;
+    }
+    costEl.textContent = msg; costEl.className = "cost" + (bad ? " bad" : "");
+    runBtn.disabled = running || bad;
   }
   rolesEl.addEventListener("change", updateCost); roundsSel.addEventListener("change", updateCost);
 
   // ---------------- meeting ----------------
-  function makeCard(role, prompt, isChair) {
+  function makeCard(role, choice, prompt, isChair) {
     const card = document.createElement("article");
     card.className = "card" + (isChair ? " chair" : ""); card.style.setProperty("--c", role.c);
-    card.innerHTML = '<div class="who"><b></b><span class="tag">waiting</span></div><div class="body"><p class="thinking">Thinking…</p></div><details class="prompt"><summary>Show the exact prompt sent</summary><pre></pre></details>';
+    card.innerHTML = '<div class="who"><div><b></b><span class="mdl"></span></div><span class="tag">waiting</span></div><div class="body"><p class="thinking">Thinking…</p></div><details class="prompt"><summary>Show the exact prompt sent</summary><pre></pre></details>';
     card.querySelector("b").textContent = role.name;
+    card.querySelector(".mdl").textContent = describe(choice);
     card.querySelector("pre").textContent = prompt;
     return card;
   }
   const sleep = (ms, signal) => new Promise((res, rej) => {
     const t = setTimeout(res, ms);
-    if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej(new DOMException("Aborted", "AbortError")); }, { once: true });
+    signal.addEventListener("abort", () => { clearTimeout(t); rej(new DOMException("Aborted", "AbortError")); }, { once: true });
   });
 
-  async function call(role, prompt, card, entries, cfg) {
+  async function call(role, choice, prompt, card, entries) {
     const body = card.querySelector(".body"), tag = card.querySelector(".tag");
-    const entry = { role: role.name, prompt, response: null, error: null, started: new Date().toISOString() };
+    const p = PROVIDERS[choice.pid], key = keyInputs[choice.pid].value.trim();
+    const entry = { roleId: role.id, role: role.name, provider: p.label, model: choice.model, prompt, response: null, error: null, started: new Date().toISOString() };
     entries.push(entry);
     if (stopped) { body.innerHTML = '<p class="err">Stopped.</p>'; tag.textContent = "stopped"; entry.error = "stopped"; return null; }
     const ctl = new AbortController(); controllers.add(ctl);
@@ -569,7 +668,7 @@ Under 280 words.`;
     try {
       for (let attempt = 0; ; attempt++) {
         try {
-          const text = await cfg.provider.stream(cfg.key, cfg.model, prompt, (t) => { lastText = t; body.innerHTML = render(t); tag.textContent = "speaking"; }, ctl.signal);
+          const text = await p.stream(key, choice.model, prompt, (t) => { lastText = t; body.innerHTML = render(t); tag.textContent = "speaking"; }, ctl.signal);
           if (!text.trim()) throw new ProviderError("The model returned an empty answer.", 0);
           body.innerHTML = render(text); tag.textContent = "done";
           entry.response = text; entry.finished = new Date().toISOString();
@@ -577,15 +676,15 @@ Under 280 words.`;
         } catch (e) {
           const retryable = (e.status === 429 || e.status >= 500) && !lastText && attempt < 2 && !stopped;
           if (!retryable) throw e;
-          tag.textContent = "retrying"; body.innerHTML = '<p class="thinking">Provider busy, retrying…</p>';
+          tag.textContent = "retrying"; body.innerHTML = '<p class="thinking">' + esc(p.label) + ' is busy, retrying…</p>';
           await sleep(4000 * (attempt + 1), ctl.signal);
         }
       }
     } catch (e) {
       entry.error = e.name === "AbortError" ? "stopped" : (e.status ? e.status + ": " : "") + e.message;
-      body.innerHTML = (lastText ? render(lastText) : "") + '<p class="err">' + esc(friendly(e)) + "</p>";
+      body.innerHTML = (lastText ? render(lastText) : "") + '<p class="err">' + esc(friendly(e, p.label)) + "</p>";
       tag.textContent = e.name === "AbortError" ? "stopped" : "failed";
-      if (e.status === 401 || e.status === 403 || e.status === 404 || e instanceof TypeError) { stopped = true; controllers.forEach((c) => c.abort()); }
+      if (e.status === 401 || e.status === 403 || e instanceof TypeError) { stopped = true; controllers.forEach((c) => c.abort()); }
       return null;
     } finally { controllers.delete(ctl); }
   }
@@ -604,18 +703,17 @@ Under 280 words.`;
 
   async function runMeeting() {
     const roles = chosen(), text = caseText.value.trim(), extra = +roundsSel.value;
-    const cfg = { provider: prov(), key: keyIn.value.trim(), model: modelIn.value.trim() || prov().defaultModel };
-    if (roles.length < 2 || !text || !cfg.key) return;
-    persist();
+    if (roles.length < 2 || !text) return;
+    persistKeys();
     running = true; stopped = false; updateCost();
-    runBtn.textContent = "Meeting in progress…"; stopBtn.hidden = false; saveBtn.hidden = true;
+    runBtn.textContent = "Meeting in progress…"; stopBtn.hidden = false; savers.hidden = true; saveNote.textContent = "";
     emptyState.hidden = true; out.innerHTML = ""; statusBar.hidden = false;
     const labels = ["First opinions"].concat(Array.from({ length: extra }, (_, i) => "Discussion " + (i + 1)), ["Chair's decision"]);
+    const seats = roles.concat([CHAIR]).map((r) => ({ roleId: r.id, role: r.name, brief: r.brief, provider: PROVIDERS[choiceFor(r).pid].label, model: choiceFor(r).model }));
     record = {
       tool: "Revision MDT Simulator (prototype)", note: "Not clinical advice.",
-      provider: cfg.provider.label, model: cfg.model,
-      caseTitle: (CASES.find((c) => c.id === caseSel.value) || {}).title, caseText: text,
-      panel: roles.map((r) => r.name), discussionRounds: extra, startedAt: new Date().toISOString(), rounds: [],
+      caseId: caseSel.value, caseTitle: (CASES.find((c) => c.id === caseSel.value) || {}).title, caseText: text,
+      seats, discussionRounds: extra, startedAt: new Date().toISOString(), rounds: [],
     };
 
     setSteps(labels, 0);
@@ -623,8 +721,8 @@ Under 280 words.`;
     let entries = []; record.rounds.push({ name: "First opinions", entries });
     let latest = {};
     await Promise.all(roles.map(async (r) => {
-      const p = firstPrompt(r, text), card = makeCard(r, p); cards.append(card);
-      const t = await call(r, p, card, entries, cfg); if (t) latest[r.id] = t;
+      const ch = choiceFor(r), p = firstPrompt(r, text), card = makeCard(r, ch, p); cards.append(card);
+      const t = await call(r, ch, p, card, entries); if (t) latest[r.id] = t;
     }));
 
     for (let k = 1; k <= extra && !stopped; k++) {
@@ -634,8 +732,8 @@ Under 280 words.`;
       const snapshot = Object.assign({}, latest), next = {};
       await Promise.all(roles.map(async (r) => {
         const others = roles.filter((o) => o.id !== r.id && snapshot[o.id]).map((o) => "### " + o.name + "\n" + snapshot[o.id]).join("\n\n") || "(No colleague opinions were available.)";
-        const p = discussPrompt(r, text, others, k), card = makeCard(r, p); cards.append(card);
-        const t = await call(r, p, card, entries, cfg); next[r.id] = t || snapshot[r.id];
+        const ch = choiceFor(r), p = discussPrompt(r, text, others, k), card = makeCard(r, ch, p); cards.append(card);
+        const t = await call(r, ch, p, card, entries); next[r.id] = t || snapshot[r.id];
       }));
       latest = next;
     }
@@ -645,26 +743,137 @@ Under 280 words.`;
       cards = addRound("Chair's decision", "The chair reads the whole discussion and records the outcome.", true);
       entries = []; record.rounds.push({ name: "Chair's decision", entries });
       const transcript = record.rounds.slice(0, -1).map((rd) => "=== " + rd.name + " ===\n" + rd.entries.filter((e) => e.response).map((e) => "### " + e.role + "\n" + e.response).join("\n\n")).join("\n\n");
-      const p = chairPrompt(text, transcript), card = makeCard(CHAIR, p, true); cards.append(card);
-      await call(CHAIR, p, card, entries, cfg);
+      const ch = choiceFor(CHAIR), p = chairPrompt(text, transcript), card = makeCard(CHAIR, ch, p, true); cards.append(card);
+      await call(CHAIR, ch, p, card, entries);
     }
     setSteps(labels, stopped ? -1 : labels.length);
     record.finishedAt = new Date().toISOString(); record.stoppedEarly = stopped;
-    running = false; runBtn.textContent = "Hold the meeting again"; stopBtn.hidden = true; saveBtn.hidden = false;
+    running = false; runBtn.textContent = "Hold the meeting again"; stopBtn.hidden = true; savers.hidden = false;
     updateCost();
   }
 
   runBtn.addEventListener("click", runMeeting);
   stopBtn.addEventListener("click", () => { stopped = true; controllers.forEach((c) => c.abort()); });
-  saveBtn.addEventListener("click", () => {
-    if (!record) return;
-    const name = "mdt-" + (caseSel.value || "case") + "-" + record.startedAt.slice(0, 16).replace(/[:T]/g, "-") + ".json";
-    const url = URL.createObjectURL(new Blob([JSON.stringify(record, null, 2)], { type: "application/json" }));
+
+  // ---------------- downloads ----------------
+  const fileStem = () => "mdt-" + (record.caseId || "case") + "-" + record.startedAt.slice(0, 16).replace(/[:T]/g, "-");
+  function saveBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+  $("jsonBtn").addEventListener("click", () => {
+    if (record) saveBlob(new Blob([JSON.stringify(record, null, 2)], { type: "application/json" }), fileStem() + ".json");
   });
 
-  loadProvider();
+  function loadScript(src) {
+    return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("load")); document.head.append(s); });
+  }
+  let pdfReady = null;
+  function ensurePdfMake() {
+    if (!pdfReady) pdfReady = (async () => { for (const u of PDFMAKE_URLS) await loadScript(u); if (!window.pdfMake || !window.pdfMake.vfs) throw new Error("pdfmake"); })();
+    pdfReady.catch(() => { pdfReady = null; });
+    return pdfReady;
+  }
+
+  const PDF = { ink: "#16202b", muted: "#5a6876", line: "#d3dae1", sunk: "#f1f4f7", warn: "#fff4dc", warnInk: "#6b4a00" };
+  const colourFor = (roleId) => (ALL_SEATS.find((r) => r.id === roleId) || CHAIR).pdf;
+  const runs = (s) => s.split(/(\*\*.+?\*\*)/g).filter(Boolean).map((part) => /^\*\*.+\*\*$/.test(part) ? { text: part.slice(2, -2), bold: true } : { text: part });
+  function mdToPdf(md) {
+    return parseMd(md).map((b) => b.t === "h" ? { text: b.text.toUpperCase(), style: "mh" }
+      : b.t === "ul" ? { ul: b.items.map((i) => ({ text: runs(i) })), margin: [0, 0, 0, 6] }
+      : { text: runs(b.text), margin: [0, 0, 0, 6] });
+  }
+  function speakerBlock(e, big) {
+    const colour = colourFor(e.roleId);
+    const content = e.response ? mdToPdf(e.response)
+      : [{ text: "No response" + (e.error ? " (" + e.error + ")" : "") + ".", italics: true, color: PDF.muted }];
+    return {
+      table: { widths: ["*"], body: [[{ stack: [
+        { columns: [{ text: e.role, bold: true, color: colour, fontSize: big ? 12 : 10.5 }, { text: e.provider + " · " + e.model, alignment: "right", style: "small" }], margin: [0, 0, 0, 6] },
+      ].concat(content) }]] },
+      layout: {
+        hLineWidth: () => 0, vLineWidth: (i) => (i === 0 ? 3 : 0), vLineColor: () => colour,
+        paddingLeft: () => 12, paddingRight: () => 4, paddingTop: () => 2, paddingBottom: () => 2,
+      },
+      margin: [0, 0, 0, 14],
+    };
+  }
+  function buildPdf(rec) {
+    const started = new Date(rec.startedAt);
+    const when = started.toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const chairRound = rec.rounds.find((r) => r.name === "Chair's decision");
+    const chairEntry = chairRound && chairRound.entries[0];
+    const discussion = rec.rounds.filter((r) => r !== chairRound);
+    const panelRows = rec.seats.map((s) => [{ text: s.role, color: colourFor(s.roleId), bold: true }, { text: s.provider + " · " + s.model, style: "small" }]);
+
+    const content = [
+      { text: "MDT MEETING TRANSCRIPT", style: "eyebrow" },
+      { text: rec.caseTitle || "Case discussion", style: "title" },
+      { text: "Revision MDT Simulator · " + when, style: "sub" },
+      { table: { widths: ["*"], body: [[{ text: [{ text: "Simulated meeting. ", bold: true }, "Generated by AI models for research purposes from a fictional or anonymised case. Not clinical advice."], color: PDF.warnInk, fillColor: PDF.warn, margin: [8, 6, 8, 6] }]] }, layout: "noBorders", margin: [0, 0, 0, 16] },
+      { columns: [
+        { width: "*", stack: [{ text: "PANEL", style: "label" }, { table: { widths: ["auto", "*"], body: panelRows }, layout: { hLineWidth: () => 0, vLineWidth: () => 0, paddingLeft: () => 0, paddingRight: () => 10, paddingTop: () => 2, paddingBottom: () => 2 } }] },
+        { width: 150, stack: [
+          { text: "DISCUSSION ROUNDS", style: "label" }, { text: String(rec.discussionRounds), margin: [0, 0, 0, 8] },
+          { text: "STATUS", style: "label" }, { text: rec.stoppedEarly ? "Stopped before completion" : "Complete" },
+        ] },
+      ], columnGap: 20, margin: [0, 0, 0, 18] },
+
+      { text: "Outcome", style: "h2" },
+      chairEntry ? speakerBlock(chairEntry, true) : { text: "The meeting was stopped before the chair recorded a decision.", italics: true, color: PDF.muted, margin: [0, 0, 0, 14] },
+
+      { text: "Case summary", style: "h2" },
+      { table: { widths: ["*"], body: [[{ text: rec.caseText, fontSize: 9.5, preserveLeadingSpaces: true, margin: [10, 8, 10, 8] }]] }, layout: { hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => PDF.sunk }, margin: [0, 0, 0, 18] },
+    ];
+    discussion.forEach((rd, i) => {
+      content.push({ text: rd.name, style: "h2", headlineLevel: 1 });
+      content.push({ text: i === 0 ? "Each consultant read the case alone, without seeing anyone else's view." : "Each consultant had read all the other opinions and responded to them.", style: "note" });
+      rd.entries.forEach((e) => content.push(speakerBlock(e)));
+    });
+    content.push({ text: "Appendix: instructions given to each seat", style: "h2", pageBreak: "before" });
+    content.push({ text: "Every prompt began with the shared framing below, followed by the role description, the case, and the instructions for that round.", style: "note" });
+    content.push({ text: FRAME, fontSize: 9, color: PDF.muted, margin: [0, 0, 0, 12] });
+    rec.seats.forEach((s) => content.push({ stack: [{ text: s.role, bold: true, color: colourFor(s.roleId) }, { text: "You are " + s.brief, fontSize: 9.5 }], margin: [0, 0, 0, 10], unbreakable: true }));
+
+    return {
+      pageSize: "A4", pageMargins: [50, 56, 50, 56],
+      info: { title: "MDT transcript: " + (rec.caseTitle || "case"), subject: "Revision MDT Simulator", creator: "Revision MDT Simulator" },
+      header: (page) => page === 1 ? null : { columns: [{ text: "Revision MDT Simulator", style: "running" }, { text: rec.caseTitle || "", style: "running", alignment: "right" }], margin: [50, 26, 50, 0] },
+      footer: (cur, total) => ({ columns: [{ text: "Simulated meeting · not clinical advice", style: "running" }, { text: "Page " + cur + " of " + total, style: "running", alignment: "right" }], margin: [50, 20, 50, 0] }),
+      content,
+      // keep a round heading with the first speaker below it
+      pageBreakBefore: (node, after) => node.headlineLevel === 1 && after.length < 6,
+      defaultStyle: { font: "Roboto", fontSize: 10, lineHeight: 1.25, color: PDF.ink },
+      styles: {
+        eyebrow: { fontSize: 8.5, color: PDF.muted, characterSpacing: 1, margin: [0, 0, 0, 4] },
+        title: { fontSize: 22, bold: true, margin: [0, 0, 0, 2] },
+        sub: { fontSize: 10, color: PDF.muted, margin: [0, 0, 0, 14] },
+        h2: { fontSize: 14, bold: true, margin: [0, 6, 0, 8] },
+        label: { fontSize: 8, color: PDF.muted, characterSpacing: 0.8, margin: [0, 0, 0, 3] },
+        mh: { fontSize: 8, bold: true, color: PDF.muted, characterSpacing: 0.6, margin: [0, 4, 0, 3] },
+        note: { fontSize: 9.5, italics: true, color: PDF.muted, margin: [0, 0, 0, 10] },
+        small: { fontSize: 8.5, color: PDF.muted },
+        running: { fontSize: 8, color: PDF.muted },
+      },
+    };
+  }
+  $("pdfBtn").addEventListener("click", async () => {
+    if (!record) return;
+    const btn = $("pdfBtn"); btn.disabled = true; saveNote.className = "saveNote"; saveNote.textContent = "Preparing PDF…";
+    try {
+      await ensurePdfMake();
+      const doc = window.pdfMake.createPdf(buildPdf(record));
+      await new Promise((res) => doc.getBlob((blob) => { saveBlob(blob, fileStem() + ".pdf"); res(); }));
+      saveNote.textContent = "PDF downloaded.";
+    } catch (e) {
+      saveNote.className = "saveNote bad";
+      saveNote.textContent = "Couldn't create the PDF. It needs an internet connection the first time. Try again, or download the JSON instead.";
+    } finally { btn.disabled = false; }
+  });
+
+  refreshModelSelects();
+  updateCost();
 })();
 </script>
 </body>
