@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { cardTags, download, fillKeys, runAndWait, setSeatModel, watchErrors, watchRequests } from "../support/app";
+import { cardTags, costLine, download, fillKeys, go, runAndWait, setSeatModel, startMeeting, watchErrors, watchRequests } from "../support/app";
 import { mockProviders } from "../support/mockProviders";
 
 test("runs a full meeting with consultants on both providers", async ({ page }) => {
@@ -10,7 +10,7 @@ test("runs a full meeting with consultants on both providers", async ({ page }) 
   await fillKeys(page, { openai: "sk-test-openai", anthropic: "sk-ant-test" });
   await setSeatModel(page, "micro", "anthropic|claude-sonnet-5-5");
   await setSeatModel(page, "chair", "anthropic|claude-haiku-5-5");
-  await expect(page.locator("#cost")).toHaveText("4 consultants × 2 rounds + chair = 9 AI calls on OpenAI and Anthropic");
+  await expect(await costLine(page)).toHaveText("4 consultants × 2 rounds + chair = 9 AI calls on OpenAI and Anthropic");
 
   await runAndWait(page);
 
@@ -18,7 +18,6 @@ test("runs a full meeting with consultants on both providers", async ({ page }) 
   await expect(cardTags(page)).toHaveText(Array(9).fill("done"));
   await expect(page.locator(".round-head h3")).toHaveText(["First opinions", "Discussion 1", "Chair's decision"]);
   await expect(page.locator("#steps .step.done")).toHaveCount(3);
-  await expect(page.locator("#runBtn")).toHaveText("Hold the meeting again");
 
   // Who was asked what, on which provider.
   const byProvider = (p: string) => mock.calls.filter((c) => c.provider === p).map((c) => `${c.round}:${c.role}`).sort();
@@ -47,6 +46,9 @@ test("runs a full meeting with consultants on both providers", async ({ page }) 
   await expect(chair.locator("h4").first()).toHaveText("MDT decision");
   await expect(chair.locator("strong").first()).toHaveText("Two-stage revision");
 
+  await go(page, "review");
+  await expect(page.locator("#runBtn")).toHaveText("Hold the meeting again");
+
   // Privacy: nothing but this site and the two providers was contacted, and the security policy wasn't tripped.
   expect([...hosts].sort()).toEqual(["api.anthropic.com", "api.openai.com", "localhost:4173"]);
   expect(errors).toEqual([]);
@@ -56,7 +58,7 @@ test("stops a meeting midway", async ({ page }) => {
   const mock = await mockProviders(page, { reply: (c) => c.round === "discussion 1" ? { kind: "hold" } : undefined });
   await page.goto("/");
   await fillKeys(page, { openai: "sk-test" });
-  await page.click("#runBtn");
+  await startMeeting(page);
   await expect(page.locator(".round-head h3")).toHaveText(["First opinions", "Discussion 1"]);
   await expect(page.locator(".round").nth(1).locator(".tag")).toHaveText(Array(4).fill("thinking"));
 
@@ -107,7 +109,7 @@ test("retries after a rate limit and carries on", async ({ page }) => {
   });
   await page.goto("/");
   await fillKeys(page, { openai: "sk-test" });
-  await page.click("#runBtn");
+  await startMeeting(page);
 
   const surgeon = page.locator(".round").first().locator(".card").first();
   await expect(surgeon.locator(".tag")).toHaveText("retrying");

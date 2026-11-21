@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { friendly, PIDS, PROVIDERS, type ProviderId } from "../providers";
-import { addCustomModel, saveModels, type Choice } from "../storage/settings";
+import { saveModels, type Choice } from "../storage/settings";
 import { MIN_PASSPHRASE } from "../storage/vault";
-import { ModelSelect } from "./ModelSelect";
 import type { KeysApi } from "./useKeys";
 
 interface Status { msg: string; cls?: "ok" | "bad" }
@@ -10,18 +9,12 @@ interface Status { msg: string; cls?: "ok" | "bad" }
 interface Props {
   k: KeysApi;
   usedChoices: Choice[];
-  defaultChoice: string;
-  onDefaultChange: (v: string) => void;
   onModelsChanged: () => void;
-  onKeysEdited: () => void;
-  onForget: () => void;
 }
 
-export function KeysPanel({ k, usedChoices, defaultChoice, onDefaultChange, onModelsChanged, onKeysEdited, onForget }: Props) {
+export function KeysPanel({ k, usedChoices, onModelsChanged }: Props) {
   const [status, setStatus] = useState<Partial<Record<ProviderId, Status>>>({});
   const [shown, setShown] = useState<Partial<Record<ProviderId, boolean>>>({});
-  const [addProv, setAddProv] = useState<ProviderId>(PIDS[0]);
-  const [addName, setAddName] = useState("");
 
   const setState = (pid: ProviderId, s: Status) => setStatus((prev) => ({ ...prev, [pid]: s }));
 
@@ -42,18 +35,10 @@ export function KeysPanel({ k, usedChoices, defaultChoice, onDefaultChange, onMo
     }
   }
 
-  function add() {
-    const name = addName.trim();
-    if (!name) return;
-    addCustomModel(addProv, name);
-    setAddName("");
-    onModelsChanged();
-  }
-
   return (
     <section className="panel" aria-labelledby="conn-h">
       <h2 id="conn-h">Your API keys</h2>
-      {k.locked ? <UnlockForm k={k} /> : (
+      {k.locked ? <UnlockForm k={k} hint={"Forgotten it? Press \"Forget keys\" below and paste your keys in again."} /> : (
         <>
           <p className="hint">Add a key for one provider, or both if you want consultants on different providers.</p>
           <div id="keyBlocks">
@@ -66,7 +51,7 @@ export function KeysPanel({ k, usedChoices, defaultChoice, onDefaultChange, onMo
                   <div className="keyrow">
                     <input type={shown[pid] ? "text" : "password"} id={"key-" + pid} className="mono" autoComplete="off" spellCheck={false}
                       placeholder={p.keyPrefix + "..."} value={k.keys[pid]}
-                      onChange={(e) => { k.setKey(pid, e.target.value); setState(pid, { msg: "" }); onKeysEdited(); }} />
+                      onChange={(e) => { k.setKey(pid, e.target.value); setState(pid, { msg: "" }); }} />
                     <button className="small" type="button" onClick={() => setShown((v) => ({ ...v, [pid]: !v[pid] }))}>{shown[pid] ? "Hide" : "Show"}</button>
                     <button className="small chk" type="button" onClick={() => check(pid)}>Check</button>
                   </div>
@@ -83,29 +68,18 @@ export function KeysPanel({ k, usedChoices, defaultChoice, onDefaultChange, onMo
           {k.remember && !k.sealed && <PassphraseForm k={k} />}
         </>
       )}
-      {k.message && <div className={"connstate" + (k.message.cls ? " " + k.message.cls : "")} role="status" id="keyMessage">{k.message.text}</div>}
-      <div className="row"><button className="small" id="forgetBtn" type="button" onClick={() => { k.forget(); setStatus({}); onForget(); }}>Forget keys</button></div>
-      <label className="fld" htmlFor="defaultModel">Default model
-        <ModelSelect id="defaultModel" value={defaultChoice} onChange={onDefaultChange} keys={k.keys} />
-        <span className="hint">Used by every seat set to "Default model" below.</span>
-      </label>
-      <details className="more">
-        <summary>Model not in the list?</summary>
-        <p className="hint">Type the exact model name from your provider's documentation and add it.</p>
-        <div className="addrow">
-          <select id="addProv" className="compact" aria-label="Provider for the new model" value={addProv} onChange={(e) => setAddProv(e.target.value as ProviderId)}>
-            {PIDS.map((pid) => <option key={pid} value={pid}>{PROVIDERS[pid].label}</option>)}
-          </select>
-          <input type="text" id="addName" className="mono" spellCheck={false} autoComplete="off" placeholder="model-name" aria-label="Model name"
-            value={addName} onChange={(e) => setAddName(e.target.value)} />
-          <button className="small" id="addBtn" type="button" onClick={add}>Add</button>
-        </div>
-      </details>
+      <KeyMessage k={k} />
+      <div className="row"><button className="small" id="forgetBtn" type="button" onClick={() => { k.forget(); setStatus({}); }}>Forget keys</button></div>
     </section>
   );
 }
 
-function UnlockForm({ k }: { k: KeysApi }) {
+export function KeyMessage({ k }: { k: KeysApi }) {
+  if (!k.message) return null;
+  return <div className={"connstate" + (k.message.cls ? " " + k.message.cls : "")} role="status" id="keyMessage">{k.message.text}</div>;
+}
+
+export function UnlockForm({ k, hint }: { k: KeysApi; hint?: string }) {
   const [pass, setPass] = useState("");
   const submit = (e: FormEvent) => { e.preventDefault(); if (pass) void k.unlock(pass); };
   return (
@@ -116,7 +90,7 @@ function UnlockForm({ k }: { k: KeysApi }) {
           <button className="small primary" type="submit" disabled={k.busy || !pass}>{k.busy ? "Unlocking…" : "Unlock"}</button>
         </span>
       </label>
-      <p className="hint">Forgotten it? Press "Forget keys" below and paste your keys in again.</p>
+      {hint && <p className="hint">{hint}</p>}
     </form>
   );
 }

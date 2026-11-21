@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { costLine, go } from "../support/app";
 
 const PASS = "correct horse battery staple";
 const storage = (page: Page) => page.evaluate(() => ({ ...localStorage }));
@@ -10,7 +11,7 @@ async function saveWithPassphrase(page: Page, first: string, second = first) {
 }
 
 test("keys are only remembered locked with a passphrase", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/settings");
   await page.fill("#key-openai", "sk-secret-openai-123");
   await page.fill("#key-anthropic", "sk-ant-secret-456");
   expect(await storage(page)).toEqual({});
@@ -36,21 +37,26 @@ test("keys are only remembered locked with a passphrase", async ({ page }) => {
 
   await page.reload();
   await expect(page.locator("#key-openai")).toHaveCount(0);
-  await expect(page.locator("#cost")).toHaveText("Unlock your saved keys above, or press \"Forget keys\" and paste them in again.");
+  await expect(page.locator("#unlockPass")).toBeVisible();
+
+  // The review step asks for the passphrase too, so there's no need to visit Settings first.
+  await expect(await costLine(page)).toHaveText("Unlock your saved keys above. If you've forgotten the passphrase, press \"Forget keys\" in Settings and paste your keys in again.");
   await expect(page.locator("#runBtn")).toBeDisabled();
   await page.fill("#unlockPass", "wrong passphrase here");
   await page.getByRole("button", { name: "Unlock" }).click();
   await expect(page.locator("#keyMessage")).toHaveText(/^That passphrase didn't unlock your keys\./);
   await page.fill("#unlockPass", PASS);
   await page.keyboard.press("Enter");
+  await expect(page.locator("#unlockPass")).toHaveCount(0);
+  await expect(page.locator("#runBtn")).toBeEnabled();
+  await go(page, "settings");
   await expect(page.locator("#key-openai")).toHaveValue("sk-secret-openai-789");
   await expect(page.locator("#key-anthropic")).toHaveValue("sk-ant-secret-456");
   await expect(page.locator("#remember")).toBeChecked();
-  await expect(page.locator("#runBtn")).toBeEnabled();
 });
 
 test("unticking Remember deletes the saved copy but keeps keys for this tab", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/settings");
   await page.fill("#key-openai", "sk-secret");
   await page.check("#remember");
   await saveWithPassphrase(page, PASS);
@@ -62,7 +68,7 @@ test("unticking Remember deletes the saved copy but keeps keys for this tab", as
 });
 
 test("Forget keys clears the boxes and the saved copy", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/settings");
   await page.fill("#key-openai", "sk-secret");
   await page.check("#remember");
   await saveWithPassphrase(page, PASS);
@@ -70,7 +76,7 @@ test("Forget keys clears the boxes and the saved copy", async ({ page }) => {
   await page.click("#forgetBtn");
   await expect(page.locator("#key-openai")).toHaveValue("");
   await expect(page.locator("#remember")).not.toBeChecked();
-  await expect(page.locator("#cost")).toHaveText("Keys cleared from this browser.");
+  await expect(page.locator("#keyMessage")).toHaveText("Keys cleared from this browser.");
   expect(await storage(page)).toEqual({});
 
   // Forget also works from the locked screen, for a forgotten passphrase.
@@ -85,7 +91,7 @@ test("Forget keys clears the boxes and the saved copy", async ({ page }) => {
 });
 
 test("plain-text keys from an earlier version are moved out of storage", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/settings");
   await page.evaluate(() => {
     localStorage.setItem("mdt.key.openai", "sk-old-plain");
     localStorage.setItem("mdt.remember", "1");
@@ -98,7 +104,7 @@ test("plain-text keys from an earlier version are moved out of storage", async (
 });
 
 test("saved model choices from earlier versions still apply", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/settings");
   await page.evaluate(() => {
     localStorage.setItem("mdt.default", "anthropic|claude-opus-5-5");
     localStorage.setItem("mdt.seats", JSON.stringify({ rad: "openai|gpt-4.1", sceptic: "openai|my-own-model" }));
@@ -106,13 +112,14 @@ test("saved model choices from earlier versions still apply", async ({ page }) =
   });
   await page.reload();
   await expect(page.locator("#defaultModel")).toHaveValue("anthropic|claude-opus-5-5");
+  await go(page, "panel");
   await expect(page.locator("#model-rad")).toHaveValue("openai|gpt-4.1");
   await expect(page.locator("#model-sceptic")).toHaveValue("openai|my-own-model");
   await expect(page.locator("#model-surg option").first()).toHaveText("Default model (Anthropic · claude-opus-5-5)");
 });
 
 test("the setting from the single-provider version is migrated", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/settings");
   await page.evaluate(() => {
     localStorage.setItem("mdt.provider", "anthropic");
     localStorage.setItem("mdt.model.anthropic", "claude-older-model");

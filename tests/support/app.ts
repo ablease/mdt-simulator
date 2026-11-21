@@ -1,21 +1,52 @@
-// Drives the meeting screen. The element ids match the original single-file app, so the parity
-// tests can run the same steps against both versions.
+// Drives the app. The element ids match the original single-file app, so the parity tests can run
+// the same steps against both versions. The original has everything on one page, so `go` does nothing there.
 import { expect, type Download, type Page } from "@playwright/test";
 import fs from "node:fs/promises";
 
+export type Place = "case" | "images" | "panel" | "review" | "settings" | "history" | "meeting";
+
+const isLegacy = (page: Page) => page.url().startsWith("http://legacy.test");
+const hashFor = (place: Place) => ["case", "images", "panel", "review"].includes(place) ? "#/new/" + place : "#/" + place;
+
+// Moves to a page or step by clicking links in the sidebar and the step list, as a person would.
+export async function go(page: Page, place: Place) {
+  if (isLegacy(page)) return;
+  const hash = hashFor(place);
+  const now = new URL(page.url()).hash;
+  if (now === hash) return;
+  const onNewMeeting = now === "" || now.startsWith("#/new/");
+  if (hash.startsWith("#/new/") && !onNewMeeting) await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "New meeting" }).click();
+  if (hash !== "#/new/case" || onNewMeeting) await page.locator(`a[href="${hash}"]`).first().click();
+  // The page has been drawn once its link is marked as the current one.
+  await expect(page.locator(`a[href="${hash}"][aria-current]`).first()).toBeVisible();
+}
+
 export async function fillKeys(page: Page, keys: { openai?: string; anthropic?: string }) {
+  await go(page, "settings");
   if (keys.openai) await page.fill("#key-openai", keys.openai);
   if (keys.anthropic) await page.fill("#key-anthropic", keys.anthropic);
 }
 
 export async function setSeatModel(page: Page, roleId: string, value: string) {
+  await go(page, "panel");
   await page.selectOption("#model-" + roleId, value);
+}
+
+// The call count and providers, or what's stopping the meeting, as shown before it runs.
+export async function costLine(page: Page) {
+  await go(page, "review");
+  return page.locator("#cost");
 }
 
 export const cardTags = (page: Page) => page.locator(".card .tag");
 
-export async function runAndWait(page: Page) {
+export async function startMeeting(page: Page) {
+  await go(page, "review");
   await page.click("#runBtn");
+}
+
+export async function runAndWait(page: Page) {
+  await startMeeting(page);
   await expect(page.locator("#savers")).toBeVisible({ timeout: 30_000 });
 }
 

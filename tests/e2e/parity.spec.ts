@@ -4,7 +4,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { download, fillKeys, setSeatModel } from "../support/app";
+import { costLine, download, fillKeys, go, setSeatModel } from "../support/app";
 import { mockProviders, type MockOptions } from "../support/mockProviders";
 
 const LEGACY_HTML = fs.readFileSync("legacy/index.html", "utf8");
@@ -59,7 +59,7 @@ async function run(browser: Browser, app: "legacy" | "new", s: Scenario) {
   }
   await page.goto(app === "legacy" ? "http://legacy.test/" : "/");
   await s.setup(page);
-  const cost = await page.locator("#cost").innerText();
+  const cost = await (await costLine(page)).innerText();
   await page.click("#runBtn");
   if (s.during) await s.during(page);
   await expect(page.locator("#savers")).toBeVisible({ timeout: 30_000 });
@@ -91,6 +91,7 @@ const scenarios: Scenario[] = [
     name: "full-meeting",
     setup: async (page) => {
       await fillKeys(page, { openai: "sk-test", anthropic: "sk-ant-test" });
+      await go(page, "panel");
       await page.check("#role-sceptic");
       await page.selectOption("#rounds", "2");
       await setSeatModel(page, "micro", "anthropic|claude-sonnet-5-5");
@@ -102,9 +103,11 @@ const scenarios: Scenario[] = [
     name: "own-case-with-a-failed-seat",
     reply: (c) => c.role === "rad" && c.round === "first" ? { kind: "error", status: 400, message: "Invalid prompt", type: "invalid_request_error" } : undefined,
     setup: async (page) => {
+      await go(page, "case");
       await page.selectOption("#caseSel", "blank");
       await page.fill("#caseText", "ANONYMISED CASE\n\nAge / sex: 70 F\nQuestion for MDT: revise or not?");
       await fillKeys(page, { openai: "sk-test" });
+      await go(page, "panel");
       await page.uncheck("#role-anaes");
     },
   },

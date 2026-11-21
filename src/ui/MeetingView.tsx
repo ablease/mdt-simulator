@@ -4,6 +4,7 @@ import { downloadPdf } from "../export/pdf";
 import type { CardView, MeetingRecord, MeetingView as View } from "../meeting/types";
 import { describe } from "../storage/settings";
 import { Markdown } from "./Markdown";
+import { href } from "./route";
 
 function Card({ card }: { card: CardView }) {
   let body;
@@ -60,10 +61,10 @@ function Savers({ record }: { record: MeetingRecord }) {
   );
 }
 
-export function MeetingView({ view }: { view: View }) {
+export function MeetingView({ view, onStop }: { view: View; onStop: () => void }) {
   const started = view.steps.length > 0;
   return (
-    <main className="meeting">
+    <div className="meeting">
       {started && (
         <div className="status" id="statusBar">
           <div className="steps" id="steps">
@@ -71,6 +72,7 @@ export function MeetingView({ view }: { view: View }) {
               <span key={l} className={"step" + (i < view.active ? " done" : i === view.active ? " on" : "")}>{l}</span>
             ))}
           </div>
+          {view.running && <button id="stopBtn" type="button" onClick={onStop}>Stop</button>}
           {!view.running && view.record && <Savers key={view.record.startedAt} record={view.record} />}
         </div>
       )}
@@ -92,9 +94,9 @@ export function MeetingView({ view }: { view: View }) {
             <li><b>Discussion.</b> Everyone reads all the other opinions and says where they agree, disagree, or change their mind.</li>
             <li><b>Chair's decision.</b> The chair reads the whole discussion and writes the outcome, recording any dissent.</li>
           </ol>
-          <span>Add an API key, pick a case and press <b>Hold the meeting</b>. A full run makes about 9 to 14 calls and takes a minute or two. Afterwards you can download the meeting as a PDF report or as JSON data.</span>
+          <span>Set one up under <a href={href({ page: "new", step: "case" })}>New meeting</a>. A full run takes a minute or two. Afterwards you can download the meeting as a PDF report or as JSON data.</span>
         </div>
       )}
-    </main>
+    </div>
   );
 }
