@@ -20,8 +20,18 @@ function Card({ card }: { card: CardView }) {
         <div><b>{card.roleName}</b><span className="mdl">{describe(card.choice)}</span></div>
         <span className="tag">{card.status}</span>
       </div>
+      {card.imaging && <p className="ai-label">AI image interpretation. Unvalidated, for research only.</p>}
+      {card.imaging && card.images && (
+        <div className="thumbs">
+          {card.images.map((im) => <figure key={im.label}><img src={im.dataUrl} alt={im.label} /><figcaption>{im.label}</figcaption></figure>)}
+        </div>
+      )}
       <div className="body">{body}</div>
-      <details className="prompt"><summary>Show the exact prompt sent</summary><pre>{card.prompt}</pre></details>
+      <details className="prompt">
+        <summary>Show the exact prompt sent</summary>
+        {card.images && <p className="sent-with">Sent with {card.images.length === 1 ? "1 image" : card.images.length + " images"} before the text: {card.images.map((im) => im.label).join("; ")}</p>}
+        <pre>{card.prompt}</pre>
+      </details>
     </article>
   );
 }

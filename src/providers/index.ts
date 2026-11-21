@@ -6,4 +6,4 @@ export const PROVIDERS: Record<ProviderId, Provider> = { openai, anthropic };
 export const PIDS = Object.keys(PROVIDERS) as ProviderId[];
 
 export type { Part, Provider, ProviderId, StreamRequest } from "./types";
-export { friendly, ProviderError } from "./errors";
+export { friendly, friendlyImageError, ProviderError } from "./errors";

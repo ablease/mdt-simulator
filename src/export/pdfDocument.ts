@@ -29,12 +29,38 @@ function speakerBlock(e: Entry, big?: boolean): Node {
     margin: [0, 0, 0, 14],
   };
 }
+// The attached images as thumbnails, three to a row, followed by the radiologist's labelled report.
+function imagesSection(rec: MeetingRecord, entry: Entry | undefined): Node[] {
+  const images = rec.images!;
+  const rows: Node[] = [];
+  for (let i = 0; i < images.length; i += 3) {
+    const row = images.slice(i, i + 3);
+    rows.push({
+      columns: [0, 1, 2].map((j) => row[j] ? { width: "*", stack: [
+        { image: "data:" + row[j].mediaType + ";base64," + row[j].data, fit: [140, 140], margin: [0, 0, 0, 4] },
+        { text: row[j].label + (row[j].caption ? ": " + row[j].caption : ""), style: "small" },
+      ] } : { width: "*", text: "" }),
+      columnGap: 12, margin: [0, 0, 0, 12], unbreakable: true,
+    });
+  }
+  return [
+    { text: "Images and imaging review", style: "h2", headlineLevel: 1 },
+    { table: { widths: ["*"], body: [[{ text: [{ text: "AI image interpretation. Unvalidated, for research only. ", bold: true }, "The user confirmed each image had been checked for identifiers before it was used."], color: PDF.warnInk, fillColor: PDF.warn, margin: [8, 6, 8, 6] }]] }, layout: "noBorders", margin: [0, 0, 0, 10] },
+    { text: rec.imagesSeenByAll
+      ? "The radiologist reviewed these images before the meeting. Every consultant also saw them with their first opinion."
+      : "The radiologist reviewed these images before the meeting. The other consultants read the report, not the images.", style: "note" },
+    ...rows,
+    entry ? speakerBlock(entry) : { text: "The meeting was stopped before the imaging review.", italics: true, color: PDF.muted, margin: [0, 0, 0, 14] },
+  ];
+}
+
 export function buildPdf(rec: MeetingRecord): Node {
   const started = new Date(rec.startedAt);
   const when = started.toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
   const chairRound = rec.rounds.find((r) => r.name === "Chair's decision");
   const chairEntry = chairRound && chairRound.entries[0];
-  const discussion = rec.rounds.filter((r) => r !== chairRound);
+  const imagingRound = rec.rounds.find((r) => r.name === "Imaging review");
+  const discussion = rec.rounds.filter((r) => r !== chairRound && r !== imagingRound);
   const panelRows = rec.seats.map((s) => [{ text: s.role, color: colourFor(s.roleId), bold: true }, { text: s.provider + " · " + s.model, style: "small" }]);
 
   const content: Node[] = [
@@ -46,6 +72,7 @@ export function buildPdf(rec: MeetingRecord): Node {
       { width: "*", stack: [{ text: "PANEL", style: "label" }, { table: { widths: ["auto", "*"], body: panelRows }, layout: { hLineWidth: () => 0, vLineWidth: () => 0, paddingLeft: () => 0, paddingRight: () => 10, paddingTop: () => 2, paddingBottom: () => 2 } }] },
       { width: 150, stack: [
         { text: "DISCUSSION ROUNDS", style: "label" }, { text: String(rec.discussionRounds), margin: [0, 0, 0, 8] },
+        ...(rec.images?.length ? [{ text: "IMAGES", style: "label" }, { text: rec.images.length + " attached", margin: [0, 0, 0, 8] }] : []),
         { text: "STATUS", style: "label" }, { text: rec.stoppedEarly ? "Stopped before completion" : "Complete" },
       ] },
     ], columnGap: 20, margin: [0, 0, 0, 18] },
@@ -56,6 +83,7 @@ export function buildPdf(rec: MeetingRecord): Node {
     { text: "Case summary", style: "h2" },
     { table: { widths: ["*"], body: [[{ text: rec.caseText, fontSize: 9.5, preserveLeadingSpaces: true, margin: [10, 8, 10, 8] }]] }, layout: { hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => PDF.sunk }, margin: [0, 0, 0, 18] },
   ];
+  if (rec.images?.length) content.push(...imagesSection(rec, imagingRound?.entries[0]));
   discussion.forEach((rd, i) => {
     content.push({ text: rd.name, style: "h2", headlineLevel: 1 });
     content.push({ text: i === 0 ? "Each consultant read the case alone, without seeing anyone else's view." : "Each consultant had read all the other opinions and responded to them.", style: "note" });

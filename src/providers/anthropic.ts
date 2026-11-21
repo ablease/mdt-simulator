@@ -1,4 +1,4 @@
-import { textOnly } from "./content";
+import { anthropicContent } from "./content";
 import { httpError, ProviderError } from "./errors";
 import { readSSE } from "./sse";
 import type { Provider } from "./types";
@@ -28,7 +28,7 @@ export const anthropic: Provider = {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST", signal,
       headers: Object.assign({ "Content-Type": "application/json" }, headers(key)),
-      body: JSON.stringify({ model, max_tokens: 2000, stream: true, messages: [{ role: "user", content: textOnly(parts) }] }),
+      body: JSON.stringify({ model, max_tokens: 2000, stream: true, messages: [{ role: "user", content: anthropicContent(parts) }] }),
     });
     if (!r.ok) throw await httpError(r);
     let text = "";

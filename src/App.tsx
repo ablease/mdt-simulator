@@ -1,5 +1,6 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { CASES } from "./cases/cases";
+import type { CaseImage } from "./images/types";
 import { MeetingEngine } from "./meeting/engine";
 import { PROVIDERS, type ProviderId } from "./providers";
 import { CHAIR, ROLES, type Role } from "./prompts/roles";
@@ -27,9 +28,14 @@ export function App() {
   // A one-off message (such as "Keys cleared") shown in place of the call count until the next change.
   const [notice, setNotice] = useState<string | null>(null);
   const [hasRun, setHasRun] = useState(false);
+  // Held in memory only, until meetings are stored in Feature 2.
+  const [images, setImages] = useState<CaseImage[]>([]);
+  const [showAll, setShowAll] = useState(false);
+  const hasImages = images.length > 0;
+  const lockedOn: Record<string, string> = hasImages ? { rad: "Reads the attached images first, so stays at the table while there are images." } : {};
 
   const hasKey = (pid: ProviderId) => !!k.keys[pid].trim();
-  const chosen = ROLES.filter((r) => roleOn[r.id]);
+  const chosen = ROLES.filter((r) => roleOn[r.id] || lockedOn[r.id]);
   const choiceFor = (r: Role) => dec(seatChoice[r.id] || defaultChoice);
   const usedChoices = chosen.concat([CHAIR]).map(choiceFor);
 
@@ -39,9 +45,11 @@ export function App() {
   if (n < 2) cost = { msg: "Choose at least two consultants.", bad: true };
   else if (k.locked) cost = { msg: "Unlock your saved keys above, or press \"Forget keys\" and paste them in again.", bad: true };
   else if (missing.length) cost = { msg: "Add your " + missing.join(" and ") + " API key, or switch those seats to a provider you have a key for.", bad: true };
+  else if (images.some((img) => !img.checked)) cost = { msg: "Tick the box under each image to confirm you've checked it for identifiers.", bad: true };
   else {
     const provs = [...new Set(usedChoices.map((c) => PROVIDERS[c.pid].label))];
-    cost = { msg: `${n} consultants × ${1 + rounds} rounds + chair = ${n * (1 + rounds) + 1} AI calls on ${provs.join(" and ")}`, bad: false };
+    const calls = n * (1 + rounds) + 1 + (hasImages ? 1 : 0);
+    cost = { msg: `${hasImages ? "Imaging review + " : ""}${n} consultants × ${1 + rounds} rounds + chair = ${calls} AI calls on ${provs.join(" and ")}`, bad: false };
   }
   const canRun = !view.running && !cost.bad;
   if (notice) cost = { msg: notice, bad: false };
@@ -56,6 +64,8 @@ export function App() {
     await engine.run({
       caseId, caseTitle: CASES.find((c) => c.id === caseId)?.title, caseText: text,
       roles: chosen, discussionRounds: rounds, choiceFor,
+      images: images.map(({ caption, mediaType, width, height, base64 }) => ({ caption, mediaType, width, height, base64 })),
+      showImagesToAll: showAll,
     });
   }
 
@@ -85,9 +95,14 @@ export function App() {
             caseText={caseText}
             onCase={(id) => { setCaseId(id); setCaseText(CASES.find((c) => c.id === id)!.text); }}
             onText={setCaseText}
+            images={images}
+            setImages={(next) => { setImages(next); edited(); }}
+            showAll={showAll}
+            onShowAll={(on) => { setShowAll(on); edited(); }}
           />
           <SeatsPanel
             roleOn={roleOn}
+            lockedOn={lockedOn}
             onToggle={(id, on) => { setRoleOn((v) => ({ ...v, [id]: on })); edited(); }}
             seatChoice={seatChoice}
             onSeatChoice={(id, v) => {

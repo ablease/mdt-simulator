@@ -30,3 +30,15 @@ export function friendly(e: unknown, provLabel?: string): string {
   if (s >= 500) return who + " had a temporary problem. Try again in a moment.";
   return "Something went wrong: " + err.message;
 }
+
+// A refusal (400) on a request that carried images almost always means the model can't read
+// images, though OpenAI doesn't document the exact error.
+export function friendlyImageError(e: unknown, provLabel: string, model: string, suggestion?: string): string {
+  const err = e as { status?: number; message?: string };
+  if (err.status !== 400) return friendly(e, provLabel);
+  const said = (err.message || "").replace(/\.$/, "");
+  const next = suggestion && suggestion !== model
+    ? `Choose a model that can read images for this seat, such as ${suggestion}, and run the meeting again.`
+    : "Try another model for this seat, and run the meeting again.";
+  return `${provLabel} couldn't read the images with ${model}. It said: "${said}". ${next}`;
+}
