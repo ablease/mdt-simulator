@@ -166,6 +166,7 @@ test("History searches, filters, compares and exports a spreadsheet", async ({ p
   await expect(historyRows(page)).toHaveCount(2);
   await expect(page.locator("#shownCount")).toHaveText("Showing 2 of 3 meetings. Clear filters");
   await page.getByRole("button", { name: "Clear filters" }).first().click();
+  await expect(page.locator("#hSearch")).toBeFocused();
   await page.selectOption("#hProvider", "Anthropic");
   await expect(historyRows(page)).toHaveCount(1);
   await page.selectOption("#hProvider", "");
@@ -223,6 +224,8 @@ test("deleting asks on the page first, never in a pop-up", async ({ page }) => {
   await page.getByRole("button", { name: "Delete 1 meeting" }).click();
   await expect(historyRows(page)).toHaveCount(1);
   await expect(page.locator(".session-item")).toHaveCount(1);
+  // Nothing is chosen now, so "Delete these" can't take focus back; the page heading does.
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
   expect(dialogs).toEqual([]);
 });
 

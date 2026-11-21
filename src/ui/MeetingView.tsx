@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { downloadJson } from "../export/download";
 import { downloadPdf } from "../export/pdf";
 import { announcementOf, pauseOf, progressOf } from "../meeting/progress";
@@ -144,6 +144,14 @@ export function MeetingView({ view, controls }: { view: View; controls?: Meeting
   const [opened, setOpened] = useState<Record<number, boolean>>({});
   const ranHere = useRef(false);
   if (view.running) ranHere.current = true;
+  // When the meeting ends, Stop disappears. If it had focus, keep keyboard users in the same place.
+  const wasRunning = useRef(view.running);
+  useLayoutEffect(() => {
+    if (wasRunning.current && !view.running && (!document.activeElement || document.activeElement === document.body)) {
+      progressLine.current?.focus({ preventScroll: true });
+    }
+    wasRunning.current = view.running;
+  }, [view.running]);
   const last = view.rounds.length - 1;
   const isOpen = (i: number) => opened[i] ?? i === last;
   const allOpen = view.rounds.every((_, i) => isOpen(i));

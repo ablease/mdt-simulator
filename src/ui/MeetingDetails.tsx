@@ -16,7 +16,8 @@ export interface Session {
 export function MeetingDetails({ session: s, open }: { session: Session; open: boolean }) {
   return (
     <aside id="details" className="details" aria-labelledby="details-h" hidden={!open}>
-      <div className="details-inner">
+      {/* Focusable, because a long case scrolls inside this column and keyboard users need to reach it. */}
+      <div className="details-inner" tabIndex={0} role="group" aria-labelledby="details-h">
         <h2 id="details-h">Case and panel</h2>
         <section className="detail">
           <h3>Case</h3>

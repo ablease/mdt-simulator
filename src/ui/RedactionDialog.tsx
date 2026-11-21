@@ -29,8 +29,14 @@ export function RedactionDialog({ image, label, onSave, onClose }: Props) {
   const { width: W, height: H } = image;
   const step = Math.max(1, Math.round(Math.max(W, H) / 100));
 
+  // The dialog is removed rather than closed, so hand focus back to whatever opened it.
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
     dialog.current?.showModal();
+    return () => opener?.focus();
+  }, []);
+
+  useEffect(() => {
     loadImage(image.dataUrl).then(setImg, (e: Error) => setError(e.message));
   }, [image.dataUrl]);
 

@@ -48,7 +48,11 @@ export function HistoryPage({ meetings }: { meetings: MeetingsState }) {
   const allShownPicked = shown.length > 0 && chosen.length === shown.length;
 
   const toggle = (id: string, on: boolean) => setPicked((s) => { const next = new Set(s); if (on) next.add(id); else next.delete(id); return next; });
-  const clearFilters = () => { setSearch(""); setCaseFilter(""); setModel(""); setProvider(""); setFrom(""); setTo(""); };
+  // The button goes once the filters are clear, so focus moves to the search box.
+  const clearFilters = () => {
+    setSearch(""); setCaseFilter(""); setModel(""); setProvider(""); setFrom(""); setTo("");
+    document.getElementById("hSearch")?.focus();
+  };
 
   async function act(what: string, fn: () => Promise<void>) {
     setBusy(true);
