@@ -10,11 +10,22 @@ export interface Call {
   index: number;
   headers: Record<string, string>;
   rawBody: string;
-  body: { model: string; stream: boolean; max_tokens?: number; messages: { role: string; content: string }[] };
+  body: { model: string; stream: boolean; max_tokens?: number; messages: { role: string; content: string | ContentPart[] }[] };
+  // The main prompt (the last text part), the image data sent, and the content as sent.
   prompt: string;
+  images: string[];
+  content: string | ContentPart[];
   // Seat id ("surg", "chair", …) and round ("first", "discussion 1", "chair"), worked out from the prompt.
   role: string;
   round: string;
+}
+
+// Either provider's content parts, as they arrive.
+export interface ContentPart {
+  type: string;
+  text?: string;
+  image_url?: { url: string; detail?: string };
+  source?: { type: string; media_type: string; data: string };
 }
 
 export type Reply =
@@ -35,6 +46,7 @@ export function roleOf(prompt: string): string {
 }
 
 export function roundOf(prompt: string): string {
+  if (/write a structured report on th(is image|ese images) for the MDT/.test(prompt)) return "imaging";
   if (prompt.includes("Give your first opinion independently.")) return "first";
   const m = prompt.match(/Discussion round (\d+)\./);
   if (m) return "discussion " + m[1];
@@ -44,6 +56,9 @@ export function roundOf(prompt: string): string {
 
 export function defaultText(call: Pick<Call, "role" | "round" | "provider" | "body">): string {
   const tag = `${call.role} on ${call.provider} (${call.body.model})`;
+  if (call.round === "imaging") {
+    return `## Images reviewed\n- Image 1\n\n## Findings\n- Lucent line around the cup, seen by ${tag}\n\n## Limitations (image quality, missing views, what can't be judged from these images)\nNo lateral view.\n\n## Confidence (low / moderate / high, with one line why)\nLow: mocked.\n\n## Relevance to the MDT question\nSupports loosening.`;
+  }
   if (call.round === "first") {
     return `## Key concerns\n- Concern raised by **${tag}**\n- Raised inflammatory markers\n\n## What I'd want to know\n1. Repeat aspirate off antibiotics\n2. CT with metal artefact reduction\n\n## My recommendation\nTwo-stage revision, says ${call.role}.\n\n## Confidence (low / moderate / high, with one line why)\nModerate: this is a mocked answer.`;
   }
@@ -97,8 +112,12 @@ export async function mockProviders(page: Page, opts: MockOptions = {}) {
     }
     const rawBody = req.postData() ?? "";
     const body = JSON.parse(rawBody);
-    const prompt = body.messages[0].content as string;
-    const call: Call = { provider, index: calls.length, headers: req.headers(), rawBody, body, prompt, role: roleOf(prompt), round: roundOf(prompt) };
+    const content = body.messages[0].content as string | ContentPart[];
+    const texts = typeof content === "string" ? [content] : content.filter((p) => p.type === "text").map((p) => p.text!);
+    const prompt = texts[texts.length - 1];
+    const images = typeof content === "string" ? [] : content.flatMap((p) =>
+      p.type === "image" ? [p.source!.data] : p.type === "image_url" ? [p.image_url!.url.replace(/^data:[^,]+,/, "")] : []);
+    const call: Call = { provider, index: calls.length, headers: req.headers(), rawBody, body, prompt, images, content, role: roleOf(prompt), round: roundOf(prompt) };
     calls.push(call);
     const reply = opts.reply?.(call, calls) ?? { kind: "stream", text: defaultText(call) };
 
