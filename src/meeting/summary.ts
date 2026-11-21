@@ -1,7 +1,7 @@
 // The one-line facts about a meeting that the history list, comparison report and CSV show.
 import { parseMd, runs } from "../markdown/markdown";
 import { CHAIR_ROUND } from "./rounds";
-import type { MeetingRecord, Rating, SavedRecord } from "./types";
+import type { MeetingRecord, Rating, Research, SavedRecord } from "./types";
 
 export type Agreement = "Unanimous" | "Majority" | "No consensus" | "";
 
@@ -91,4 +91,11 @@ export function summarise(rec: SavedRecord, savedAt: string): MeetingSummary {
 // True if at least one seat answered, so the meeting is worth keeping.
 export const anyAnswer = (rec: MeetingRecord) => rec.rounds.some((r) => r.entries.some((e) => e.response));
 
-export const emptyResearch = (caseTag = "") => ({ caseTag, actualDecision: "", rating: "" as Rating, notes: "", updatedAt: null });
+export const emptyResearch = (caseTag = ""): Research => ({ caseTag, actualDecision: "", rating: "", notes: "", updatedAt: null });
+
+// "21 Nov 2026, 10:15", for lists and reports.
+export const shortWhen = (iso: string) => new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+export const ratingLabel = (r: Rating) => (r ? r[0].toUpperCase() + r.slice(1) : "");
+
+export const hasResearch = (r: Research | undefined) => !!r && !!(r.caseTag || r.actualDecision || r.rating || r.notes);
