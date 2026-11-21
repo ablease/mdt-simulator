@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { download, fillKeys, runAndWait, setSeatModel, watchErrors, watchRequests } from "../support/app";
+import { costLine, download, fillKeys, go, runAndWait, setSeatModel, watchErrors, watchRequests } from "../support/app";
 import { dicomBytes, gifBytes, heicBytes, jpegSize, makeImage, PLANTED, withJpegMetadata, withPngText } from "../support/images";
 import { mockProviders } from "../support/mockProviders";
 
@@ -7,6 +7,7 @@ const FILENAMES = ["SMITH_JOHN_1234567.jpg", "Jones-Mary-DOB-1950.png"];
 
 // A large JPEG with EXIF and a comment, and a small PNG with a text chunk, all naming a patient.
 async function attachTwoImages(page: Page) {
+  await go(page, "images");
   const jpeg = withJpegMetadata(await makeImage(page, { width: 3000, height: 2000, type: "image/jpeg", text: "SMITH JOHN 1234567" }),
     { artist: "SMITH JOHN", comment: "Patient SMITH JOHN NHS 943 476 5919" });
   const png = withPngText(await makeImage(page, { width: 800, height: 600, type: "image/png" }), "Comment", "JONES MARY NHS 943 476 5919");
@@ -43,13 +44,15 @@ test("cleans attached images and runs the imaging review first", async ({ page }
   await attachTwoImages(page);
 
   // The radiologist is brought back and locked on, and nothing runs until both images are ticked.
+  await go(page, "panel");
   await expect(page.locator("#role-rad")).toBeChecked();
   await expect(page.locator("#role-rad")).toBeDisabled();
-  await expect(page.locator("#cost")).toHaveText("Tick the box under each image to confirm you've checked it for identifiers.");
+  await expect(await costLine(page)).toHaveText("Tick the box under each image to confirm you've checked it for identifiers.");
   await expect(page.locator("#runBtn")).toBeDisabled();
+  await page.getByRole("link", { name: "Go to the images" }).click();
   await page.locator(".img-item").first().getByLabel("Image 1 caption").fill("AP pelvis, 3 months ago");
   await tickAll(page);
-  await expect(page.locator("#cost")).toHaveText("Imaging review + 4 consultants × 2 rounds + chair = 10 AI calls on OpenAI and Anthropic");
+  await expect(await costLine(page)).toHaveText("Imaging review + 4 consultants × 2 rounds + chair = 10 AI calls on OpenAI and Anthropic");
 
   await runAndWait(page);
   await expect(page.locator(".round-head h3")).toHaveText(["Imaging review", "First opinions", "Discussion 1", "Chair's decision"]);
@@ -153,7 +156,7 @@ test("carries on without a report when the radiologist's model can't read images
 });
 
 test("black-out boxes are burned into the image", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/new/images");
   await page.setInputFiles("#imageInput", { name: "white.png", mimeType: "image/png", buffer: await makeImage(page, { width: 1000, height: 500, type: "image/png", fill: "#fff" }) });
   const item = page.locator(".img-item");
   await item.locator("input[type=checkbox]").check();
@@ -198,7 +201,7 @@ test("black-out boxes are burned into the image", async ({ page }) => {
 });
 
 test("refuses files that aren't PNG or JPEG, and more than ten images", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/new/images");
   await page.setInputFiles("#imageInput", [
     { name: "photo.heic", mimeType: "image/heic", buffer: heicBytes() },
     { name: "scan.gif", mimeType: "image/gif", buffer: gifBytes() },
@@ -219,14 +222,17 @@ test("refuses files that aren't PNG or JPEG, and more than ten images", async ({
   await expect(page.getByRole("button", { name: "Choose images" })).toBeDisabled();
 
   // Removing every image unlocks the radiologist again.
+  await go(page, "panel");
   await expect(page.locator("#role-rad")).toBeDisabled();
+  await go(page, "images");
   while (await page.locator(".img-item").count()) await page.locator(".img-item").first().getByRole("button", { name: "Remove" }).click();
-  await expect(page.locator("#role-rad")).toBeEnabled();
   await expect(page.locator("#seeImages")).toHaveCount(0);
+  await go(page, "panel");
+  await expect(page.locator("#role-rad")).toBeEnabled();
 });
 
 test("keeps photos the right way up and accepts dropped files", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/new/images");
   // EXIF orientation 6 means "rotate 90° clockwise to display": a 300 × 200 file shows as 200 × 300.
   const rotated = withJpegMetadata(await makeImage(page, { width: 300, height: 200, type: "image/jpeg" }), { artist: "X", comment: "Y", orientation: 6 });
   const png = await makeImage(page, { width: 120, height: 80, type: "image/png" });

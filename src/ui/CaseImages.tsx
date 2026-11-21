@@ -42,8 +42,8 @@ export function CaseImages({ images, setImages, showAll, onShowAll }: Props) {
   const editingIndex = images.findIndex((img) => img.id === editing);
 
   return (
-    <div className="images">
-      <span className="fld"><span>Images <span className="tag">optional</span></span></span>
+    <section className="panel images" aria-labelledby="images-h">
+      <h2 id="images-h">Images <span className="tag">optional</span></h2>
       <div
         className={"drop" + (dragOver ? " over" : "")}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -96,6 +96,6 @@ export function CaseImages({ images, setImages, showAll, onShowAll }: Props) {
           onSave={(base64) => { update(images[editingIndex].id, { base64, dataUrl: dataUrlOf(base64), checked: false }); setEditing(null); }}
         />
       )}
-    </div>
+    </section>
   );
 }

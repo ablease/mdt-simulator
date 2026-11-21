@@ -14,19 +14,14 @@ interface Props {
   keys: Keys;
   rounds: number;
   onRounds: (n: number) => void;
-  runLabel: string;
-  canRun: boolean;
-  running: boolean;
-  onRun: () => void;
-  onStop: () => void;
-  cost: { msg: string; bad: boolean };
 }
 
 export function SeatsPanel(props: Props) {
-  const { rounds, onRounds, runLabel, canRun, running, onRun, onStop, cost } = props;
+  const { rounds, onRounds } = props;
   return (
     <section className="panel" aria-labelledby="panel-h">
       <h2 id="panel-h">Who sits at the table</h2>
+      <p className="hint">Tick the consultants you want. You need at least two, and the chair always attends. Each seat can use the default model or one of its own. You can change the default model in <a href="#/settings">Settings</a>.</p>
       <div className="roles" id="roles">
         {ROLES.map((r) => <SeatRow key={r.id} role={r} {...props} />)}
         <SeatRow role={CHAIR} fixed {...props} />
@@ -37,11 +32,6 @@ export function SeatsPanel(props: Props) {
           <option value="2">2 rounds</option>
         </select>
       </label>
-      <div className="row">
-        <button className="primary" id="runBtn" type="button" disabled={!canRun} onClick={onRun}>{runLabel}</button>
-        {running && <button id="stopBtn" type="button" onClick={onStop}>Stop</button>}
-      </div>
-      <div className={"cost" + (cost.bad ? " bad" : "")} id="cost" role="status">{cost.msg}</div>
     </section>
   );
 }

@@ -56,7 +56,7 @@ export function useKeys() {
     const res = await openVault(passphrase, blob);
     setBusy(false);
     if (!res) {
-      setMessage({ text: "That passphrase didn't unlock your keys. Check it and try again, or press \"Forget keys\" and paste your keys in again.", cls: "bad" });
+      setMessage({ text: "That passphrase didn't unlock your keys. Check it and try again, or press \"Forget keys\" in Settings and paste your keys in again.", cls: "bad" });
       return;
     }
     sealer.current = res.sealer;
@@ -103,7 +103,7 @@ export function useKeys() {
     setRemember(false);
     setSealed(false);
     setLocked(false);
-    setMessage(null);
+    setMessage({ text: "Keys cleared from this browser.", cls: "" });
   }
 
   return { keys, setKey, locked, remember, sealed, busy, message, unlock, choosePassphrase, setRememberOn, forget };
