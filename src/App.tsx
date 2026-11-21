@@ -20,6 +20,7 @@ import { Sidebar } from "./ui/Sidebar";
 import { useDraft } from "./ui/useDraft";
 import { useKeys } from "./ui/useKeys";
 import { useMeetings, useSavedRecord } from "./ui/useMeetings";
+import { useTheme } from "./ui/useTheme";
 
 // What happened to the meeting last run in this tab once it ended.
 type Outcome = { saved: SavedRecord } | { saved: null; note: string };
@@ -33,6 +34,7 @@ export function App() {
   const d = useDraft();
   const route = useRoute();
   const meetings = useMeetings();
+  const theme = useTheme();
   const [session, setSession] = useState<Session | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(() => store.get("mdt.ui.details") !== "closed");
@@ -123,7 +125,15 @@ export function App() {
     document.querySelector<HTMLElement>("main h1")?.focus({ preventScroll: true });
   }, [routeKey]);
 
-  const meetingProps = { onStop: engine.stop, detailsOpen, onToggleDetails: toggleDetails, onRerun: rerun, onDelete: remove };
+  // Say so in the tab's title while a meeting waits, in case another tab is in front.
+  useEffect(() => {
+    if (!view.paused) return;
+    const before = document.title;
+    document.title = "Waiting for you · " + before;
+    return () => { document.title = before; };
+  }, [view.paused]);
+
+  const meetingProps = { detailsOpen, onToggleDetails: toggleDetails, onRerun: rerun, onDelete: remove };
   let page;
   let details: Session | null = null;
   if (route.page === "new") {
@@ -142,11 +152,11 @@ export function App() {
     }
   } else if (route.page === "meeting") {
     details = session;
-    page = <MeetingPage {...meetingProps} view={view} title={session?.caseTitle || "Meeting"} saved={null} note={outcome && !outcome.saved ? outcome.note : null} hasDetails={!!session} />;
+    page = <MeetingPage {...meetingProps} view={view} title={session?.caseTitle || "Meeting"} saved={null} note={outcome && !outcome.saved ? outcome.note : null} controls={engine} hasDetails={!!session} />;
   } else if (route.page === "history") {
     page = <HistoryPage meetings={meetings} />;
   } else {
-    page = <SettingsPage k={k} draft={d} meetings={meetings} />;
+    page = <SettingsPage k={k} draft={d} meetings={meetings} theme={theme} />;
   }
 
   // The meeting run in this tab gets its own sidebar entry until it's saved.

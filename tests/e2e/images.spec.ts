@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { strFromU8, unzipSync } from "fflate";
-import { costLine, download, fillKeys, go, runAndWait, setSeatModel, watchErrors, watchRequests } from "../support/app";
+import { costLine, download, fillKeys, go, runAndWait, setSeatModel, startMeeting, watchErrors, watchRequests } from "../support/app";
 import { dicomBytes, gifBytes, heicBytes, jpegSize, makeImage, PLANTED, withJpegMetadata, withPngText } from "../support/images";
 import { mockProviders } from "../support/mockProviders";
 
@@ -154,9 +154,16 @@ test("carries on without a report when the radiologist's model can't read images
   await setSeatModel(page, "rad", "openai|gpt-4.1-mini");
   await attachTwoImages(page);
   await tickAll(page);
-  await runAndWait(page);
+  await startMeeting(page);
 
+  // The meeting waits to be told whether to go on without a report.
   const imagingCard = page.locator(".round").first().locator(".card");
+  await expect(page.locator("#pausePanel")).toContainText("The imaging review didn't work.");
+  await expect(imagingCard.locator(".err")).toHaveText(/run the meeting again\.$/);
+  expect(mock.calls.filter((c) => c.round !== "imaging")).toHaveLength(0);
+  await page.getByRole("button", { name: "Carry on without a report" }).click();
+  await expect(page.locator("#savers")).toBeVisible();
+
   await expect(imagingCard.locator(".tag")).toHaveText("failed");
   await expect(imagingCard.locator(".err")).toHaveText(
     "OpenAI couldn't read the images with gpt-4.1-mini. It said: \"Invalid content type. image_url is only supported by certain models\". Choose a model that can read images for this seat, such as gpt-5, and run the meeting again. The meeting will carry on without an imaging report.");

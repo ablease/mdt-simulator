@@ -80,20 +80,75 @@ test("stops a meeting midway", async ({ page }) => {
   mock.release();
 });
 
-test("a rejected key stops the meeting with a plain-English message", async ({ page }) => {
-  await mockProviders(page, { reply: () => ({ kind: "error", status: 401, message: "Incorrect API key provided", type: "invalid_request_error" }) });
+test("a rejected key pauses the meeting until the key is corrected and the seats are tried again", async ({ page }) => {
+  const mock = await mockProviders(page, {
+    reply: (c) => c.headers["authorization"] === "Bearer sk-right" ? undefined : { kind: "error", status: 401, message: "Incorrect API key provided", type: "invalid_request_error" },
+  });
   await page.goto("/");
   await fillKeys(page, { openai: "sk-wrong" });
-  await runAndWait(page);
+  await startMeeting(page);
 
-  await expect(page.locator(".round-head h3")).toHaveText(["First opinions"]);
-  // The first 401 cancels calls still in flight, so the other cards end "failed" or "stopped" depending on timing.
-  await expect(cardTags(page)).toHaveText(Array(4).fill(/^(failed|stopped)$/));
-  await expect(page.locator(".card .err", { hasText: "OpenAI rejected the API key. Check you pasted the whole key into the right box." }).first()).toBeVisible();
+  const pause = page.locator("#pausePanel");
+  await expect(pause).toContainText("4 consultants didn't answer.");
+  await expect(cardTags(page)).toHaveText(Array(4).fill("failed"));
+  await expect(page.locator(".card .err").first()).toHaveText("OpenAI rejected the API key. Check you pasted the whole key into the right box.");
+  await expect(page.locator("#progressText")).toHaveText("Waiting for you · 0 of 9 answers · 4 failed");
+  await expect(page.locator(".session-item").first()).toContainText("Waiting for you");
+  await expect(page).toHaveTitle(/^Waiting for you · /);
+  expect(mock.calls).toHaveLength(4);
+
+  // Correct the key in Settings, then come back to the meeting, which has waited.
+  await fillKeys(page, { openai: "sk-right" });
+  await go(page, "meeting");
+  await expect(pause).toBeVisible();
+  await page.getByRole("button", { name: "Try all 4 again" }).click();
+  await expect(page.locator("#progressText")).toBeFocused();
+  await expect(page.locator("#savers")).toBeVisible();
+
+  await expect(cardTags(page)).toHaveText(Array(9).fill("done"));
+  await expect(page).not.toHaveTitle(/Waiting for you/);
   const { data } = await download(page, "jsonBtn");
   const rec = JSON.parse(data.toString());
-  expect(rec.stoppedEarly).toBe(true);
-  expect(rec.rounds[0].entries.map((e: { error: string }) => e.error)).toContain("401: Incorrect API key provided");
+  expect(rec.stoppedEarly).toBe(false);
+  expect(rec.rounds[0].entries.map((e: { earlierErrors: string[] }) => e.earlierErrors)).toEqual(Array(4).fill(["401: Incorrect API key provided"]));
+  expect(rec.rounds[1].entries[0].earlierErrors).toBeUndefined();
+});
+
+test("one failed seat can be tried again on its own, and another left out", async ({ page }) => {
+  let surgeonTries = 0;
+  const mock = await mockProviders(page, {
+    reply: (c) => {
+      if (c.round !== "first") return;
+      if (c.role === "micro") return { kind: "error", status: 400, message: "Unsupported parameter", type: "invalid_request_error" };
+      if (c.role === "surg" && surgeonTries++ < 3) return { kind: "error", status: 503, message: "Overloaded" };
+    },
+  });
+  await page.clock.install();
+  await page.goto("/");
+  await fillKeys(page, { openai: "sk-test" });
+  await startMeeting(page);
+  // A busy provider is retried twice by itself before the seat is given up on.
+  const surgeon = page.locator(".round").first().locator(".card").first();
+  await expect(surgeon.locator(".tag")).toHaveText("retrying");
+  await page.clock.fastForward(4000);
+  await expect(surgeon.locator(".tag")).toHaveText("retrying");
+  await page.clock.fastForward(8000);
+  await expect(page.locator("#pausePanel")).toContainText("2 consultants didn't answer.");
+
+  await surgeon.getByRole("button", { name: "Try again: Revision arthroplasty surgeon" }).click();
+  await expect(surgeon).toBeFocused();
+  await expect(surgeon.locator(".tag")).toHaveText("done");
+  await expect(page.locator("#pausePanel")).toContainText("The consultant microbiologist didn't answer.");
+  await page.getByRole("button", { name: "Carry on without them" }).click();
+  await expect(page.locator("#savers")).toBeVisible();
+
+  await expect(page.locator("#progressText")).toHaveText("Finished · 8 of 9 answers · 1 failed");
+  const surgDiscussion = mock.calls.find((c) => c.round === "discussion 1" && c.role === "rad")!.prompt;
+  expect(surgDiscussion).toContain("### Revision arthroplasty surgeon\n");
+  expect(surgDiscussion).not.toContain("### Consultant microbiologist");
+  const rec = JSON.parse((await download(page, "jsonBtn")).data.toString());
+  expect(rec.rounds[0].entries[0].earlierErrors).toEqual(["503: Overloaded"]);
+  expect(rec.rounds[0].entries[1]).toMatchObject({ response: null, error: "400: Unsupported parameter" });
 });
 
 test("retries after a rate limit and carries on", async ({ page }) => {

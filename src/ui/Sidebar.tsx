@@ -36,7 +36,7 @@ export function Sidebar({ route, view, live, meetings }: Props) {
           {live && (
             <a className="session-item" href={href({ page: "meeting" })} aria-current={route.page === "meeting" && !route.id ? "page" : undefined}>
               <b>{live.caseTitle || "Meeting"}</b>
-              <span>{view.running ? "In progress" : "Not saved"}, started {live.startedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+              <span>{view.paused ? "Waiting for you" : view.running ? "In progress" : "Not saved"}, started {live.startedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
             </a>
           )}
           {list.slice(0, RECENT).map((m) => (

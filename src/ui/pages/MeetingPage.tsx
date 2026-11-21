@@ -1,7 +1,7 @@
 import { shortWhen } from "../../meeting/summary";
 import type { SavedRecord, MeetingView as View } from "../../meeting/types";
 import { ConfirmButton } from "../ConfirmButton";
-import { MeetingView } from "../MeetingView";
+import { MeetingView, type MeetingControls } from "../MeetingView";
 import { ResearchPanel } from "../ResearchPanel";
 
 interface Props {
@@ -11,7 +11,8 @@ interface Props {
   saved: SavedRecord | null;
   // Why the meeting just run wasn't saved, if it wasn't.
   note: string | null;
-  onStop: () => void;
+  // Only for the meeting running in this tab.
+  controls?: MeetingControls;
   hasDetails: boolean;
   detailsOpen: boolean;
   onToggleDetails: () => void;
@@ -19,7 +20,7 @@ interface Props {
   onDelete: (rec: SavedRecord) => Promise<void>;
 }
 
-export function MeetingPage({ view, title, saved, note, onStop, hasDetails, detailsOpen, onToggleDetails, onRerun, onDelete }: Props) {
+export function MeetingPage({ view, title, saved, note, controls, hasDetails, detailsOpen, onToggleDetails, onRerun, onDelete }: Props) {
   return (
     <div className="page meeting-page">
       <header className="page-head">
@@ -50,7 +51,8 @@ export function MeetingPage({ view, title, saved, note, onStop, hasDetails, deta
         </div>
       </header>
       {note && <p className="note" role="status">{note}</p>}
-      <MeetingView view={view} onStop={onStop} />
+      {/* A new meeting starts with its rounds folded as usual; the saved copy of this one keeps the same key. */}
+      <MeetingView key={view.startedAt} view={view} controls={controls} />
       {saved && <ResearchPanel key={saved.id} id={saved.id} initial={saved.research} />}
     </div>
   );

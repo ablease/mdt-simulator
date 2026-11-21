@@ -31,8 +31,9 @@ export interface ContentPart {
 export type Reply =
   | { kind: "stream"; text: string }
   | { kind: "error"; status: number; message: string; type?: string }
-  // Leave the request open until release() is called, to test stopping mid-call.
-  | { kind: "hold" };
+  // Leave the request open until release() is called, to test stopping mid-call. Released requests
+  // fail as if the connection dropped, unless they're set to answer.
+  | { kind: "hold"; answer?: boolean };
 
 export interface MockOptions {
   reply?: (call: Call, calls: Call[]) => Reply | undefined;
@@ -123,19 +124,22 @@ export async function mockProviders(page: Page, opts: MockOptions = {}) {
 
     if (reply.kind === "hold") {
       await new Promise<void>((r) => held.push(r));
-      await route.abort().catch(() => {});
-      return;
+      if (!reply.answer) {
+        await route.abort().catch(() => {});
+        return;
+      }
     }
     if (reply.kind === "error") {
       const type = reply.type ?? "api_error";
       const err = provider === "openai" ? { error: { message: reply.message, type } } : { type: "error", error: { type, message: reply.message } };
       return route.fulfill({ status: reply.status, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(err) });
     }
+    const text = reply.kind === "stream" ? reply.text : defaultText(call);
     return route.fulfill({
       status: 200,
       headers: { ...cors, "content-type": "text/event-stream", "cache-control": "no-cache" },
-      body: provider === "openai" ? openaiSSE(reply.text) : anthropicSSE(reply.text),
-    });
+      body: provider === "openai" ? openaiSSE(text) : anthropicSSE(text),
+    }).catch(() => {});
   };
 
   await page.route("https://api.openai.com/**", handler("openai"));

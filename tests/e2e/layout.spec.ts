@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { costLine, fillKeys, go, runAndWait, startMeeting } from "../support/app";
+import { costLine, fillKeys, go, runAndWait, startMeeting, watchErrors } from "../support/app";
 import { mockProviders } from "../support/mockProviders";
 
 const BAR = "Research tool. Simulated, AI-generated output. Not clinical advice. Fictional or fully anonymised cases only.";
@@ -121,6 +121,86 @@ test("the meeting carries on in the background and keeps its own copy of the cas
   await expect(details).toBeHidden();
   await expect(page.getByRole("button", { name: "Show case and panel" })).toHaveAttribute("aria-expanded", "false");
   expect(await page.evaluate(() => localStorage.getItem("mdt.ui.details"))).toBe("closed");
+});
+
+test("the current round sits in a grid, earlier rounds fold away, and progress stays in view", async ({ page }) => {
+  const mock = await mockProviders(page, { reply: (c) => c.round === "discussion 1" && c.role !== "surg" ? { kind: "hold", answer: true } : undefined });
+  await page.goto("/");
+  await fillKeys(page, { openai: "sk-test" });
+  await startMeeting(page);
+  const rounds = page.locator(".round");
+  await expect(rounds).toHaveCount(2);
+  await expect(page.locator("#progressText")).toHaveText("Discussion 1 · 5 of 9 answers");
+
+  // First opinions have folded to a line of names; the discussion is open, four cards two by two.
+  const first = page.getByRole("button", { name: "First opinions" });
+  await expect(first).toHaveAttribute("aria-expanded", "false");
+  await expect(rounds.first().locator(".cards")).toBeHidden();
+  await expect(rounds.first().locator(".strip li")).toHaveText(["Revision arthroplasty surgeon", "Consultant microbiologist", "Musculoskeletal radiologist", "Peri-operative physician / anaesthetist"]);
+  const boxes = await Promise.all([0, 1, 2].map((i) => rounds.nth(1).locator(".card").nth(i).boundingBox()));
+  expect(boxes[1]!.y).toBe(boxes[0]!.y);
+  expect(boxes[2]!.x).toBe(boxes[0]!.x);
+  expect(boxes[2]!.y).toBeGreaterThan(boxes[0]!.y);
+
+  // Stop and the progress line stay at the top while the page scrolls.
+  await page.mouse.wheel(0, 3000);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  expect((await page.locator("#stopBtn").boundingBox())!.y).toBeLessThan(120);
+
+  // A round opened by hand stays open as the meeting moves on.
+  await first.focus();
+  await page.keyboard.press("Enter");
+  await expect(first).toHaveAttribute("aria-expanded", "true");
+  await expect(rounds.first().locator(".cards")).toBeVisible();
+  mock.release();
+  await expect(page.locator("#savers")).toBeVisible();
+  await expect(page.locator("#progressText")).toHaveText("Finished · 9 of 9 answers");
+  const expanded = () => page.locator(".round-toggle").evaluateAll((els) => els.map((e) => e.getAttribute("aria-expanded")));
+  expect(await expanded()).toEqual(["true", "false", "true"]);
+
+  // Every round can be opened at once, and folded again.
+  const fold = page.locator("#foldBtn");
+  await expect(fold).toHaveText("Show every round");
+  await fold.click();
+  expect(await expanded()).toEqual(["true", "true", "true"]);
+  await expect(fold).toHaveText("Fold earlier rounds");
+  await fold.click();
+  expect(await expanded()).toEqual(["false", "false", "true"]);
+});
+
+test("the theme is chosen in Settings and applied before the page is drawn", async ({ page }) => {
+  const errors = watchErrors(page);
+  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const LIGHT = "rgb(243, 245, 247)", DARK = "rgb(15, 21, 27)";
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  await go(page, "settings");
+  const theme = page.getByRole("group", { name: "Theme" });
+  await expect(theme.getByLabel("Match my computer")).toBeChecked();
+  expect(await background()).toBe(LIGHT);
+
+  await theme.getByLabel("Dark").check();
+  expect(await background()).toBe(DARK);
+  expect(await page.evaluate(() => localStorage.getItem("mdt.ui.theme"))).toBe("dark");
+
+  // The small script in the page head sets it, even before the app itself has loaded.
+  await page.route("**/assets/index-*.js", (route) => route.abort());
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(await background()).toBe(DARK);
+  await page.unroute("**/assets/index-*.js");
+
+  // A choice overrides the computer's setting; "Match my computer" follows it again.
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.reload();
+  await go(page, "settings");
+  await theme.getByLabel("Light").check();
+  expect(await background()).toBe(LIGHT);
+  await theme.getByLabel("Match my computer").check();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+  expect(await background()).toBe(DARK);
+  expect(await page.evaluate(() => localStorage.getItem("mdt.ui.theme"))).toBeNull();
+  expect(errors.filter((e) => !e.includes("net::ERR_FAILED"))).toEqual([]);
 });
 
 test("nothing spills sideways on a tablet or phone", async ({ page }) => {

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { strFromU8, unzipSync } from "fflate";
-import { costLine, download, fillKeys, go, runAndWait, setSeatModel } from "../support/app";
+import { costLine, download, fillKeys, go, runAndWait, setSeatModel, startMeeting } from "../support/app";
 import { makeImage, withJpegMetadata } from "../support/images";
 import { defaultText, mockProviders, type MockOptions } from "../support/mockProviders";
 
@@ -54,7 +54,9 @@ test("each meeting is saved when it finishes and is still there after a reload",
 
 test("a meeting where nobody answered isn't saved", async ({ page }) => {
   await setUp(page, { reply: () => ({ kind: "error", status: 401, message: "Incorrect API key provided" }) });
-  await runAndWait(page);
+  await startMeeting(page);
+  await expect(page.locator("#pausePanel")).toBeVisible();
+  await page.click("#stopBtn");
   await expect(page.locator(".note")).toHaveText("This meeting wasn't saved, because no consultant answered. Check the messages on the cards, then try again.");
   await expect(page).toHaveURL(/#\/meeting$/);
   await expect(page.locator(".session-item")).toContainText("Not saved");
@@ -164,6 +166,7 @@ test("History searches, filters, compares and exports a spreadsheet", async ({ p
   await expect(historyRows(page)).toHaveCount(2);
   await expect(page.locator("#shownCount")).toHaveText("Showing 2 of 3 meetings. Clear filters");
   await page.getByRole("button", { name: "Clear filters" }).first().click();
+  await expect(page.locator("#hSearch")).toBeFocused();
   await page.selectOption("#hProvider", "Anthropic");
   await expect(historyRows(page)).toHaveCount(1);
   await page.selectOption("#hProvider", "");
@@ -221,6 +224,8 @@ test("deleting asks on the page first, never in a pop-up", async ({ page }) => {
   await page.getByRole("button", { name: "Delete 1 meeting" }).click();
   await expect(historyRows(page)).toHaveCount(1);
   await expect(page.locator(".session-item")).toHaveCount(1);
+  // Nothing is chosen now, so "Delete these" can't take focus back; the page heading does.
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
   expect(dialogs).toEqual([]);
 });
 
