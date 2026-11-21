@@ -29,6 +29,12 @@ export function ReviewStep({ draft: d, k, ready, running, hasRun, onRun }: Props
             <dt>Case</dt>
             <dd>{d.caseTitle}{edited && <span className="tag">edited</span>} <a href={href({ page: "new", step: "case" })}>Change</a></dd>
           </div>
+          {d.caseTag.trim() && (
+            <div>
+              <dt>Case ID</dt>
+              <dd>{d.caseTag.trim()} <span className="hint">(saved with the meeting, not sent to the AI)</span></dd>
+            </div>
+          )}
           <div>
             <dt>Images</dt>
             <dd>
@@ -71,7 +77,7 @@ export function ReviewStep({ draft: d, k, ready, running, hasRun, onRun }: Props
           <li><b>Discussion.</b> Everyone reads all the other opinions and says where they agree, disagree, or change their mind.</li>
           <li><b>Chair's decision.</b> The chair reads the whole discussion and writes the outcome, recording any dissent.</li>
         </ol>
-        <p className="hint">A full meeting takes a minute or two. Answers appear as they're written, and you can stop at any point. Afterwards you can download the meeting as a PDF report or as JSON data. Meetings aren't saved yet, so download them before you close this tab.</p>
+        <p className="hint">A full meeting takes a minute or two. Answers appear as they're written, and you can stop at any point. The meeting is saved on this computer when it finishes, and you can download it as a PDF report, a Word document or JSON data.</p>
       </section>
     </>
   );

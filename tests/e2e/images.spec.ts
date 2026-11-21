@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { strFromU8, unzipSync } from "fflate";
 import { costLine, download, fillKeys, go, runAndWait, setSeatModel, watchErrors, watchRequests } from "../support/app";
 import { dicomBytes, gifBytes, heicBytes, jpegSize, makeImage, PLANTED, withJpegMetadata, withPngText } from "../support/images";
 import { mockProviders } from "../support/mockProviders";
@@ -103,6 +104,17 @@ test("cleans attached images and runs the imaging review first", async ({ page }
   const pdf = await download(page, "pdfBtn");
   expect(pdf.data.subarray(0, 5).toString()).toBe("%PDF-");
   await expect(page.locator("#saveNote")).toHaveText("PDF downloaded.");
+
+  // The Word file carries both images, the unvalidated label and the report.
+  const files = unzipSync(new Uint8Array((await download(page, "wordBtn")).data));
+  expect(Object.keys(files).filter((f) => f.startsWith("word/media/"))).toHaveLength(2);
+  const xml = strFromU8(files["word/document.xml"]);
+  expect(xml).toContain("AI image interpretation. Unvalidated, for research only. ");
+  expect(xml).toContain("Image 1: AP pelvis, 3 months ago");
+  expect(xml).toContain("Lucent line around the cup");
+  for (const name of FILENAMES) expect(xml).not.toContain(name.replace(/\.\w+$/, ""));
+
+  // Loading the Word library, like everything else, stayed on this site.
   expect([...hosts].sort()).toEqual(["api.anthropic.com", "api.openai.com", "localhost:4173"]);
   expect(errors).toEqual([]);
 });

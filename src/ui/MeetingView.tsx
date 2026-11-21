@@ -51,9 +51,24 @@ function Savers({ record }: { record: MeetingRecord }) {
       setBusy(false);
     }
   }
+  async function word() {
+    setBusy(true);
+    setNote({ text: "Preparing Word file…", bad: false });
+    try {
+      // Loaded only when needed: the Word library is large.
+      const { downloadWord } = await import("../export/word");
+      await downloadWord(record);
+      setNote({ text: "Word file downloaded.", bad: false });
+    } catch {
+      setNote({ text: "Couldn't create the Word file. Reload the page and try again, or download the PDF instead.", bad: true });
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className="savers" id="savers">
       <button id="pdfBtn" className="small" type="button" disabled={busy} onClick={pdf}>Download PDF</button>
+      <button id="wordBtn" className="small" type="button" disabled={busy} onClick={word}>Download Word</button>
       <button id="jsonBtn" className="small" type="button" onClick={() => downloadJson(record)}>Download JSON</button>
       <span className={"saveNote" + (note.bad ? " bad" : "")} id="saveNote" role="status">{note.text}</span>
     </div>

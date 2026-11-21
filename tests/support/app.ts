@@ -1,16 +1,20 @@
-// Drives the app. The element ids match the original single-file app, so the parity tests can run
-// the same steps against both versions. The original has everything on one page, so `go` does nothing there.
+// Drives the app the way a person would: through the sidebar, the set-up steps and the buttons.
 import { expect, type Download, type Page } from "@playwright/test";
 import fs from "node:fs/promises";
 
 export type Place = "case" | "images" | "panel" | "review" | "settings" | "history" | "meeting";
 
-const isLegacy = (page: Page) => page.url().startsWith("http://legacy.test");
 const hashFor = (place: Place) => ["case", "images", "panel", "review"].includes(place) ? "#/new/" + place : "#/" + place;
 
-// Moves to a page or step by clicking links in the sidebar and the step list, as a person would.
+// Moves to a page or step by clicking links in the sidebar and the step list. "meeting" opens the
+// newest meeting in the sidebar: the one running, or the latest saved.
 export async function go(page: Page, place: Place) {
-  if (isLegacy(page)) return;
+  if (place === "meeting") {
+    if (/#\/meeting/.test(page.url())) return;
+    await page.locator(".session-item").first().click();
+    await expect(page.locator(".session-item[aria-current]")).toBeVisible();
+    return;
+  }
   const hash = hashFor(place);
   const now = new URL(page.url()).hash;
   if (now === hash) return;
