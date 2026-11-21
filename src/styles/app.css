@@ -193,7 +193,7 @@ details.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family
 .img-item img { width: 96px; height: 96px; object-fit: contain; background: #000; border-radius: 4px; }
 .img-fields { display: grid; gap: 8px; min-width: 0; }
 .img-errors { margin: 0; padding-left: 18px; color: var(--err); font-size: 13px; display: grid; gap: 4px; }
-.lock-note { font-style: italic; }
+.lock-note { display: block; font-style: italic; }
 .role-main input:disabled { cursor: not-allowed; }
 .ai-label { margin: 0; padding: 6px 10px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-fg); font-size: 13px; font-weight: 600; }
 .thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
