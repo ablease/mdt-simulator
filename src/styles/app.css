@@ -105,3 +105,27 @@ footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
 /* Passphrase forms for saved keys */
 .vault { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; }
 .keyrow.two { grid-template-columns: minmax(0, 1fr) auto; }
+/* Images attached to the case */
+.images { display: grid; gap: 10px; }
+.drop { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; justify-content: center; padding: 16px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); font-size: 13.5px; text-align: center; }
+.drop.over { border-color: var(--accent); background: var(--sunk); }
+.img-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.img-item { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; }
+.img-item img { width: 96px; height: 96px; object-fit: contain; background: #000; border-radius: 4px; }
+.img-fields { display: grid; gap: 8px; min-width: 0; }
+.img-errors { margin: 0; padding-left: 18px; color: var(--err); font-size: 13px; display: grid; gap: 4px; }
+.lock-note { font-style: italic; }
+.role-main input:disabled { cursor: not-allowed; }
+.ai-label { margin: 0; padding: 6px 10px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-fg); font-size: 13px; font-weight: 600; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+.thumbs figure { margin: 0; display: grid; gap: 4px; width: 120px; }
+.thumbs img { width: 120px; height: 120px; object-fit: contain; background: #000; border-radius: 4px; }
+.thumbs figcaption { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.sent-with { margin: 8px 0 0; color: var(--muted); }
+/* Black-out editor */
+dialog.redact { width: min(1000px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--line); border-radius: 10px; padding: 18px; background: var(--surface); color: var(--fg); }
+dialog.redact::backdrop { background: rgb(0 0 0 / 0.55); }
+.redact-body { display: grid; gap: 12px; }
+.redact-body h3 { margin: 0; font-size: 18px; }
+.redact canvas { display: block; max-width: 100%; max-height: 60vh; width: auto; height: auto; margin: 0 auto; touch-action: none; cursor: crosshair; background: #000; }
+@media (max-width: 480px) { .img-item { grid-template-columns: minmax(0, 1fr); } }
