@@ -15,6 +15,8 @@ The case text is sent to the AI company you choose (OpenAI or Anthropic). Before
 
 If in doubt, leave it out or make it vaguer. Your trust's information governance team has the final say on what you can use.
 
+The yellow bar across the top of every page is there as a reminder of this.
+
 ## Getting an API key
 
 The simulator uses your own account with an AI company, so the cost goes to you rather than anyone else. These accounts are separate from a ChatGPT or Claude subscription, even if you already pay for one of those.
@@ -35,7 +37,7 @@ You need at least one key. Having both lets you put different companies' models 
 3. Open **API keys**, create a key, and name it "MDT simulator".
 4. Copy it straight away. It starts with `sk-ant-`.
 
-Paste the key into the matching box in the simulator and press **Check**. If it works, you'll see how many models your account can use, and the model menus fill up with them.
+In the simulator, open **Settings** from the list on the left. Paste the key into the matching box and press **Check**. If it works, you'll see how many models your account can use, and the model menus fill up with them.
 
 ## Set a spending limit
 
@@ -49,7 +51,7 @@ Treat an API key like a card number: anyone who has it can spend your credit.
 
 - Use a separate key just for the simulator. If anything goes wrong, you can delete that one key without affecting anything else.
 - The safest place to keep keys is a password manager. You can then paste them in each time you open the simulator, and they're never stored in the browser.
-- If you'd rather not paste them every time, tick **Remember my keys** and choose a passphrase. The keys are saved on this computer, scrambled so they can't be read without the passphrase. You'll type the passphrase once each time you open the simulator. Three or four unrelated words make a good passphrase, for example "teapot glacier violin seven".
+- If you'd rather not paste them every time, tick **Remember my keys** in Settings and choose a passphrase. The keys are saved on this computer, scrambled so they can't be read without the passphrase. You'll type the passphrase once each time you open the simulator, either in Settings or on the last step before a meeting. Three or four unrelated words make a good passphrase, for example "teapot glacier violin seven".
 - If you forget the passphrase, there's no way to recover it. Press **Forget keys** and paste your keys in again.
 - If you think a key has been seen by someone else, delete it on the OpenAI or Anthropic website and create a new one.
 - Don't use **Remember my keys** on a shared or hospital computer.
@@ -58,15 +60,20 @@ The simulator moved to mdt.ablease.co.uk in November 2026. Keys saved at the old
 
 ## Running a meeting
 
-1. Choose a test case, or **Blank case** to write your own. You can edit any case. Try changing one detail, such as the aspirate result, and run it again to see whether the panel changes its mind.
-2. If you like, add images. See the next section first.
-3. Under **Who sits at the table**, tick the consultants you want. You need at least two. The chair always attends. Each seat can use the default model or one of its own.
-4. Choose one or two rounds of discussion.
-5. Press **Hold the meeting**. Answers appear as they're written. A full meeting takes a minute or two.
-6. Press **Stop** at any point to end the meeting early.
-7. When it's finished, download a **PDF** report or the **JSON** file. The JSON file holds every prompt and answer, which is useful for research analysis. If you attached images, both files include them.
+The list on the left has three links: **New meeting**, **History** and **Settings**. Add your key under Settings first. Then press **New meeting**, which takes you through four steps. Move between them with **Next** and **Back**, or by clicking a step's name. Nothing you've typed is lost when you move between steps.
+
+1. **Case.** Choose a test case, or **Blank case** to write your own. You can edit any case. Try changing one detail, such as the aspirate result, and run it again to see whether the panel changes its mind.
+2. **Images.** This step is optional. See the next section before you add any.
+3. **Panel and models.** Tick the consultants you want. You need at least two, and the chair always attends. Each seat can use the default model or one of its own. Then choose one or two rounds of discussion.
+4. **Review and run.** Check the case, the images, and who sits at the table on which model. The simulator shows how many AI calls the meeting will make and which companies they go to. If something needs sorting out first, it says what and gives you a link to the right step. Press **Hold the meeting** when you're ready.
+
+The meeting page opens straight away. Answers appear as they're written, and a full meeting takes a minute or two. Press **Stop** at any point to end it early. The case and panel the meeting was run with are shown down the right-hand side. Press **Hide case and panel** if you want more room for the answers.
+
+When it's finished, download a **PDF** report or the **JSON** file. The JSON file holds every prompt and answer, which is useful for research analysis. If you attached images, both files include them.
 
 Each card has a **Show the exact prompt sent** link, so you can see exactly what that consultant was asked.
+
+You can start setting up the next meeting while one is still running. The running meeting carries on, and you can get back to it from **This session** on the left.
 
 ## Adding images
 
