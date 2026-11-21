@@ -1,0 +1,194 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`prompts > keeps every role brief 1`] = `
+[
+  {
+    "brief": "a consultant orthopaedic surgeon specialising in complex hip and knee revision surgery. You focus on surgical options, bone loss, implant choice, technical feasibility and expected function.",
+    "focus": "Surgical options, bone loss, implant choice, feasibility and expected function.",
+    "id": "surg",
+    "name": "Revision arthroplasty surgeon",
+  },
+  {
+    "brief": "a consultant microbiologist with a special interest in bone and joint infection. You focus on whether this is periprosthetic joint infection using accepted diagnostic criteria, the reliability of the tests done, and antibiotic strategy.",
+    "focus": "Whether this is infection, how reliable the tests are, antibiotic strategy.",
+    "id": "micro",
+    "name": "Consultant microbiologist",
+  },
+  {
+    "brief": "a consultant musculoskeletal radiologist. You focus on what the imaging does and does not show, how reliable it is, and what further imaging would change management.",
+    "focus": "What the imaging shows, how reliable it is, what further imaging would help.",
+    "id": "rad",
+    "name": "Musculoskeletal radiologist",
+  },
+  {
+    "brief": "a consultant anaesthetist and peri-operative physician. You focus on fitness for surgery, risk, optimisation, anticoagulation, frailty, and whether the patient's goals justify the risk.",
+    "focus": "Fitness for surgery, risk, optimisation, anticoagulation, frailty, patient goals.",
+    "id": "anaes",
+    "name": "Peri-operative physician / anaesthetist",
+  },
+  {
+    "brief": "a senior consultant asked to act as devil's advocate. Your job is to challenge the emerging consensus, argue for the most credible alternative plan (including doing less or nothing), and point out weak evidence or assumptions. Stay clinically credible.",
+    "focus": "Argues against the consensus, to stop everyone simply agreeing.",
+    "id": "sceptic",
+    "name": "Devil's advocate",
+  },
+  {
+    "brief": "the chair of the MDT, recording the outcome as it would appear in the MDT minutes, faithfully reflecting the discussion rather than adding a new opinion.",
+    "focus": "Always attends. Reads the whole discussion and records the outcome.",
+    "id": "chair",
+    "name": "MDT chair",
+  },
+]
+`;
+
+exports[`prompts > keeps the built-in cases 1`] = `
+[
+  {
+    "id": "pji-hip",
+    "text": "FICTIONAL TEST CASE 1 (invented for prototype testing)
+
+74-year-old woman. Primary uncemented total hip replacement (right) 9 years ago.
+Presenting complaint: 4 months of increasing groin pain, worse on weight-bearing. No wound problems. Was given a 1-week course of oral antibiotics by GP for a "chest infection" 3 weeks before aspiration.
+
+PMH: Type 2 diabetes (HbA1c 64 mmol/mol), BMI 34, hypertension. Independent, walks with one stick, lives with husband.
+
+Bloods: CRP 38 mg/L, ESR 52 mm/hr, WCC 9.1.
+Hip aspirate: synovial WCC 2,400 cells/µL, 78% neutrophils. Cultures x2: no growth at 14 days. Alpha-defensin: not done.
+
+Imaging: radiolucent lines around acetabular component in all three zones with superomedial migration; femoral stem appears well fixed. Acetabular defect estimated Paprosky 2B on CT.
+
+Question for MDT: Septic or aseptic loosening? Single-stage, two-stage, or aseptic acetabular revision?",
+    "title": "Painful hip, possible infection",
+  },
+  {
+    "id": "stiff-tkr",
+    "text": "FICTIONAL TEST CASE 2 (invented for prototype testing)
+
+68-year-old man. Primary cemented total knee replacement (left) 18 months ago.
+Presenting complaint: persistent anterior and medial knee pain since surgery, stiffness. Never felt the knee was "right". Completed 12 weeks of physiotherapy.
+
+PMH: Hypercholesterolaemia. Ex-smoker. Retired electrician, keen walker.
+
+Examination: well-healed wound, small effusion, ROM 10°–85°, stable to varus/valgus stress. Patellar maltracking noted.
+
+Bloods: CRP 3 mg/L, ESR 11 mm/hr.
+Aspirate: synovial WCC 450 cells/µL, 30% neutrophils, cultures negative.
+
+Imaging: rotational CT shows femoral component internally rotated 6° relative to the transepicondylar axis and tibial component internally rotated 8°. No loosening. Bone scan: non-specific uptake.
+
+Oxford Knee Score: 19/48.
+
+Question for MDT: Is revision for component malrotation indicated, or should this be managed non-operatively?",
+    "title": "Stiff, painful knee replacement",
+  },
+  {
+    "id": "ppf-frail",
+    "text": "FICTIONAL TEST CASE 3 (invented for prototype testing)
+
+86-year-old woman. Cemented total hip replacement (left) 14 years ago.
+Presenting complaint: mechanical fall at home yesterday, unable to weight-bear.
+
+PMH: Atrial fibrillation on apixaban (last dose 18 hours ago), CKD stage 3b (eGFR 38), moderate aortic stenosis (valve area 1.1 cm²), mild cognitive impairment. Clinical Frailty Scale 6. Lives alone with carers twice daily, walks with a frame indoors.
+
+Imaging: spiral periprosthetic femoral fracture around the stem tip; cement mantle fractured and stem appears loose. Classified Vancouver B2. Bone stock reasonable for age.
+
+Question for MDT: Revision with a long stem, fixation (ORIF), or non-operative management? Timing and peri-operative plan?",
+    "title": "Fracture around a hip stem, frail patient",
+  },
+  {
+    "id": "dislocate",
+    "text": "FICTIONAL TEST CASE 4 (invented for prototype testing)
+
+61-year-old man. Primary total hip replacement (right) 8 months ago via posterior approach, 32 mm head.
+Presenting complaint: 3 dislocations in the last 6 months, all closed-reduced in ED, all in flexion and internal rotation (e.g. getting out of a low car).
+
+PMH: Previous L3–S1 spinal fusion (stiff spine), BMI 29, otherwise well. Works as a plumber, wants to return to work.
+
+Bloods: CRP 4 mg/L. No signs of infection.
+
+Imaging: CT shows acetabular inclination 52°, anteversion 5°. Femoral stem anteversion 12°. Leg lengths equal. Abductor muscles intact on MRI.
+
+Question for MDT: Which revision strategy: acetabular revision to correct orientation, dual mobility, constrained liner, or a combination?",
+    "title": "Repeated hip dislocations",
+  },
+  {
+    "id": "blank",
+    "text": "ANONYMISED CASE
+
+Age / sex:
+Index operation and date:
+Presenting complaint:
+
+PMH and function:
+
+Bloods:
+Aspirate / microbiology:
+
+Imaging:
+
+Question for MDT:",
+    "title": "Blank case (write your own)",
+  },
+]
+`;
+
+exports[`prompts > keeps the chair prompt 1`] = `
+"This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.
+
+You are the chair of the MDT. You have heard the full discussion below. Your job is to record the MDT outcome as it would appear in the MDT minutes, faithfully reflecting the discussion rather than adding a new opinion of your own.
+
+CASE:
+CASE
+
+DISCUSSION:
+=== First opinions ===
+
+Write the outcome using exactly these headings, each on its own line starting with "## ":
+## MDT decision
+## Rationale
+## Before surgery (investigations or optimisation still needed)
+## Dissent recorded
+## Level of agreement (unanimous / majority / no consensus, and who differed)
+
+Under 280 words."
+`;
+
+exports[`prompts > keeps the discussion prompt 1`] = `
+"This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.
+
+You are a consultant microbiologist with a special interest in bone and joint infection. You focus on whether this is periprosthetic joint infection using accepted diagnostic criteria, the reliability of the tests done, and antibiotic strategy.
+
+CASE:
+CASE
+
+Discussion round 2. These are your colleagues' latest views:
+
+### Someone
+view
+
+Respond to your colleagues. Use exactly these headings, each on its own line starting with "## ":
+## Where I agree
+## Where I disagree
+## My position now (say clearly whether it has changed and why)
+
+Engage with specific points colleagues made by naming their specialty. Under 170 words."
+`;
+
+exports[`prompts > keeps the first-opinion prompt 1`] = `
+"This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.
+
+You are a consultant orthopaedic surgeon specialising in complex hip and knee revision surgery. You focus on surgical options, bone loss, implant choice, technical feasibility and expected function.
+
+CASE:
+CASE
+
+Give your first opinion independently. Use exactly these short headings, each on its own line starting with "## ":
+## Key concerns
+## What I'd want to know
+## My recommendation
+## Confidence (low / moderate / high, with one line why)
+
+Be specific and concise: under 200 words in total. Bullet points are fine."
+`;
+
+exports[`prompts > keeps the shared framing 1`] = `"This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant."`;
