@@ -8,6 +8,8 @@ export interface Entry {
   provider: string;
   model: string;
   prompt: string;
+  // Labels of the images sent before the prompt text, e.g. "Image 1: AP pelvis". Absent when none were sent.
+  images?: string[];
   response: string | null;
   error: string | null;
   started: string;
@@ -16,12 +18,18 @@ export interface Entry {
 
 export interface Seat { roleId: string; role: string; brief: string; provider: string; model: string }
 
+// An attached image, cleaned and re-encoded, with its JPEG data as base64.
+export interface RecordImage { label: string; caption: string; mediaType: "image/jpeg"; width: number; height: number; data: string }
+
 export interface MeetingRecord {
   tool: string;
   note: string;
   caseId: string;
   caseTitle?: string;
   caseText: string;
+  // Only present when images were attached.
+  images?: RecordImage[];
+  imagesSeenByAll?: boolean;
   seats: Seat[];
   discussionRounds: number;
   startedAt: string;
@@ -41,6 +49,10 @@ export interface CardView {
   choice: Choice;
   prompt: string;
   chair: boolean;
+  // The radiologist's report on the attached images, shown with an "unvalidated" label.
+  imaging: boolean;
+  // Images sent with this call, if any.
+  images: { label: string; dataUrl: string }[] | null;
   status: CardStatus;
   text: string;
   notice: string | null;
