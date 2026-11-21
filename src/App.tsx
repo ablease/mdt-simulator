@@ -20,6 +20,7 @@ import { Sidebar } from "./ui/Sidebar";
 import { useDraft } from "./ui/useDraft";
 import { useKeys } from "./ui/useKeys";
 import { useMeetings, useSavedRecord } from "./ui/useMeetings";
+import { useTheme } from "./ui/useTheme";
 
 // What happened to the meeting last run in this tab once it ended.
 type Outcome = { saved: SavedRecord } | { saved: null; note: string };
@@ -33,6 +34,7 @@ export function App() {
   const d = useDraft();
   const route = useRoute();
   const meetings = useMeetings();
+  const theme = useTheme();
   const [session, setSession] = useState<Session | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(() => store.get("mdt.ui.details") !== "closed");
@@ -154,7 +156,7 @@ export function App() {
   } else if (route.page === "history") {
     page = <HistoryPage meetings={meetings} />;
   } else {
-    page = <SettingsPage k={k} draft={d} meetings={meetings} />;
+    page = <SettingsPage k={k} draft={d} meetings={meetings} theme={theme} />;
   }
 
   // The meeting run in this tab gets its own sidebar entry until it's saved.

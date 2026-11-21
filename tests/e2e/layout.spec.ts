@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { costLine, fillKeys, go, runAndWait, startMeeting } from "../support/app";
+import { costLine, fillKeys, go, runAndWait, startMeeting, watchErrors } from "../support/app";
 import { mockProviders } from "../support/mockProviders";
 
 const BAR = "Research tool. Simulated, AI-generated output. Not clinical advice. Fictional or fully anonymised cases only.";
@@ -166,6 +166,41 @@ test("the current round sits in a grid, earlier rounds fold away, and progress s
   await expect(fold).toHaveText("Fold earlier rounds");
   await fold.click();
   expect(await expanded()).toEqual(["false", "false", "true"]);
+});
+
+test("the theme is chosen in Settings and applied before the page is drawn", async ({ page }) => {
+  const errors = watchErrors(page);
+  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const LIGHT = "rgb(243, 245, 247)", DARK = "rgb(15, 21, 27)";
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  await go(page, "settings");
+  const theme = page.getByRole("group", { name: "Theme" });
+  await expect(theme.getByLabel("Match my computer")).toBeChecked();
+  expect(await background()).toBe(LIGHT);
+
+  await theme.getByLabel("Dark").check();
+  expect(await background()).toBe(DARK);
+  expect(await page.evaluate(() => localStorage.getItem("mdt.ui.theme"))).toBe("dark");
+
+  // The small script in the page head sets it, even before the app itself has loaded.
+  await page.route("**/assets/index-*.js", (route) => route.abort());
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(await background()).toBe(DARK);
+  await page.unroute("**/assets/index-*.js");
+
+  // A choice overrides the computer's setting; "Match my computer" follows it again.
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.reload();
+  await go(page, "settings");
+  await theme.getByLabel("Light").check();
+  expect(await background()).toBe(LIGHT);
+  await theme.getByLabel("Match my computer").check();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+  expect(await background()).toBe(DARK);
+  expect(await page.evaluate(() => localStorage.getItem("mdt.ui.theme"))).toBeNull();
+  expect(errors.filter((e) => !e.includes("net::ERR_FAILED"))).toEqual([]);
 });
 
 test("nothing spills sideways on a tablet or phone", async ({ page }) => {

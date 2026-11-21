@@ -7,6 +7,27 @@ import { KeysPanel } from "../KeysPanel";
 import { ModelsPanel } from "../ModelsPanel";
 import type { Draft } from "../useDraft";
 import type { KeysApi } from "../useKeys";
+import type { Theme, ThemeApi } from "../useTheme";
+
+const THEMES: [Theme, string][] = [["system", "Match my computer"], ["light", "Light"], ["dark", "Dark"]];
+
+function AppearancePanel({ theme }: { theme: ThemeApi }) {
+  return (
+    <section className="panel" aria-labelledby="appearance-h">
+      <h2 id="appearance-h">Appearance</h2>
+      <fieldset className="choices">
+        <legend>Theme</legend>
+        {THEMES.map(([value, label]) => (
+          <label className="check" key={value}>
+            <input type="radio" name="theme" value={value} checked={theme.theme === value} onChange={() => theme.choose(value)} />
+            <span>{label}</span>
+          </label>
+        ))}
+      </fieldset>
+      <p className="hint">Saved in this browser. Reports and downloads always use the light colours.</p>
+    </section>
+  );
+}
 
 const size = (bytes: number) => bytes < 1024 ** 2 ? "less than 1 MB" : `about ${Math.round(bytes / 1024 ** 2)} MB`;
 
@@ -45,7 +66,7 @@ function StoragePanel({ meetings }: { meetings: MeetingsState }) {
   );
 }
 
-export function SettingsPage({ k, draft: d, meetings }: { k: KeysApi; draft: Draft; meetings: MeetingsState }) {
+export function SettingsPage({ k, draft: d, meetings, theme }: { k: KeysApi; draft: Draft; meetings: MeetingsState; theme: ThemeApi }) {
   // The model menus read their lists from the browser, so redraw them after "Check" or "Add".
   const [, setModelsVersion] = useState(0);
   const modelsChanged = () => setModelsVersion((x) => x + 1);
@@ -54,7 +75,7 @@ export function SettingsPage({ k, draft: d, meetings }: { k: KeysApi; draft: Dra
       <header className="page-head">
         <div>
           <h1 tabIndex={-1}>Settings</h1>
-          <p className="lede">Your API keys, model choices and saved meetings. They're kept in this browser and nowhere else.</p>
+          <p className="lede">Your API keys, model choices, saved meetings and how the page looks. They're kept in this browser and nowhere else.</p>
         </div>
       </header>
       <div className="settings">
@@ -62,6 +83,7 @@ export function SettingsPage({ k, draft: d, meetings }: { k: KeysApi; draft: Dra
         <div className="stack">
           <ModelsPanel keys={k.keys} defaultChoice={d.defaultChoice} onDefaultChange={d.setDefaultChoice} onModelsChanged={modelsChanged} />
           <StoragePanel meetings={meetings} />
+          <AppearancePanel theme={theme} />
           <section className="panel" aria-labelledby="privacy-h">
             <h2 id="privacy-h">Privacy</h2>
             <p className="hint">This page has no server. It runs entirely in your browser and talks directly to the providers you choose. Your keys, your cases and your saved meetings are not sent to whoever hosts this page. Usage is billed to your own provider accounts, so it's sensible to set a monthly spending limit there.</p>
