@@ -1,5 +1,68 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`image prompts > keeps the imaging review prompt 1`] = `
+"This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.
+
+You are a consultant musculoskeletal radiologist. You focus on what the imaging does and does not show, how reliable it is, and what further imaging would change management.
+
+CASE:
+CASE
+
+The anonymised images above are labelled Image 1 to Image 3, each with its caption if one was given.
+
+Before the meeting, write a structured report on these images for the MDT. Describe only what you can see. Where something can't be judged from these images, say so plainly rather than guessing. Don't give measurements, angles or classifications unless you can make them from the images yourself, and say how reliable they are. If the case summary describes imaging, say whether these images agree with it.
+
+Use exactly these headings, each on its own line starting with "## ":
+## Images reviewed
+## Findings
+## Limitations (image quality, missing views, what can't be judged from these images)
+## Confidence (low / moderate / high, with one line why)
+## Relevance to the MDT question
+
+Under 300 words."
+`;
+
+exports[`image prompts > only changes the first-opinion prompt when images are shown to everyone 1`] = `
+"This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.
+
+You are a consultant orthopaedic surgeon specialising in complex hip and knee revision surgery. You focus on surgical options, bone loss, implant choice, technical feasibility and expected function.
+
+CASE:
+CASE
+
+The same images are attached above, labelled Image 1 to Image 2. You may look at them yourself, but describe only what you can see.
+
+Give your first opinion independently. Use exactly these short headings, each on its own line starting with "## ":
+## Key concerns
+## What I'd want to know
+## My recommendation
+## Confidence (low / moderate / high, with one line why)
+
+Be specific and concise: under 200 words in total. Bullet points are fine."
+`;
+
+exports[`image prompts > words the imaging review for a single image 1`] = `
+"This is a case used to test a research prototype that simulates a UK NHS multidisciplinary team (MDT) meeting for complex and revision hip and knee arthroplasty. Answer as you would in a real MDT, using current UK practice and widely accepted criteria where relevant.
+
+You are a consultant musculoskeletal radiologist. You focus on what the imaging does and does not show, how reliable it is, and what further imaging would change management.
+
+CASE:
+CASE
+
+The anonymised image above is labelled Image 1, with its caption if one was given.
+
+Before the meeting, write a structured report on this image for the MDT. Describe only what you can see. Where something can't be judged from this image, say so plainly rather than guessing. Don't give measurements, angles or classifications unless you can make them from the image yourself, and say how reliable they are. If the case summary describes imaging, say whether this image agrees with it.
+
+Use exactly these headings, each on its own line starting with "## ":
+## Images reviewed
+## Findings
+## Limitations (image quality, missing views, what can't be judged from these images)
+## Confidence (low / moderate / high, with one line why)
+## Relevance to the MDT question
+
+Under 300 words."
+`;
+
 exports[`prompts > keeps every role brief 1`] = `
 [
   {
