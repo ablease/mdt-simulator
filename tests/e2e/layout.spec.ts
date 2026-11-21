@@ -123,6 +123,51 @@ test("the meeting carries on in the background and keeps its own copy of the cas
   expect(await page.evaluate(() => localStorage.getItem("mdt.ui.details"))).toBe("closed");
 });
 
+test("the current round sits in a grid, earlier rounds fold away, and progress stays in view", async ({ page }) => {
+  const mock = await mockProviders(page, { reply: (c) => c.round === "discussion 1" && c.role !== "surg" ? { kind: "hold", answer: true } : undefined });
+  await page.goto("/");
+  await fillKeys(page, { openai: "sk-test" });
+  await startMeeting(page);
+  const rounds = page.locator(".round");
+  await expect(rounds).toHaveCount(2);
+  await expect(page.locator("#progressText")).toHaveText("Discussion 1 · 5 of 9 answers");
+
+  // First opinions have folded to a line of names; the discussion is open, four cards two by two.
+  const first = page.getByRole("button", { name: "First opinions" });
+  await expect(first).toHaveAttribute("aria-expanded", "false");
+  await expect(rounds.first().locator(".cards")).toBeHidden();
+  await expect(rounds.first().locator(".strip li")).toHaveText(["Revision arthroplasty surgeon", "Consultant microbiologist", "Musculoskeletal radiologist", "Peri-operative physician / anaesthetist"]);
+  const boxes = await Promise.all([0, 1, 2].map((i) => rounds.nth(1).locator(".card").nth(i).boundingBox()));
+  expect(boxes[1]!.y).toBe(boxes[0]!.y);
+  expect(boxes[2]!.x).toBe(boxes[0]!.x);
+  expect(boxes[2]!.y).toBeGreaterThan(boxes[0]!.y);
+
+  // Stop and the progress line stay at the top while the page scrolls.
+  await page.mouse.wheel(0, 3000);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  expect((await page.locator("#stopBtn").boundingBox())!.y).toBeLessThan(120);
+
+  // A round opened by hand stays open as the meeting moves on.
+  await first.focus();
+  await page.keyboard.press("Enter");
+  await expect(first).toHaveAttribute("aria-expanded", "true");
+  await expect(rounds.first().locator(".cards")).toBeVisible();
+  mock.release();
+  await expect(page.locator("#savers")).toBeVisible();
+  await expect(page.locator("#progressText")).toHaveText("Finished · 9 of 9 answers");
+  const expanded = () => page.locator(".round-toggle").evaluateAll((els) => els.map((e) => e.getAttribute("aria-expanded")));
+  expect(await expanded()).toEqual(["true", "false", "true"]);
+
+  // Every round can be opened at once, and folded again.
+  const fold = page.locator("#foldBtn");
+  await expect(fold).toHaveText("Show every round");
+  await fold.click();
+  expect(await expanded()).toEqual(["true", "true", "true"]);
+  await expect(fold).toHaveText("Fold earlier rounds");
+  await fold.click();
+  expect(await expanded()).toEqual(["false", "false", "true"]);
+});
+
 test("nothing spills sideways on a tablet or phone", async ({ page }) => {
   await mockProviders(page);
   await page.goto("/");

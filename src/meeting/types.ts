@@ -11,6 +11,8 @@ export interface Entry {
   response: string | null;
   error: string | null;
   started: string;
+  // What went wrong on earlier tries, oldest first, when the seat was tried again. Absent if it wasn't.
+  earlierErrors?: string[];
   finished?: string;
 }
 
@@ -88,4 +90,12 @@ export interface MeetingView {
   rounds: RoundView[];
   // Set once the meeting has finished or been stopped.
   record: MeetingRecord | null;
+  // When the meeting started, which tells one meeting from another on screen.
+  startedAt: string | null;
+  // How many AI calls the meeting is set to make, for the progress line.
+  planned: number;
+  // Cards whose seat failed and can be tried again. The meeting won't move on until each is retried or let go.
+  retryable: string[];
+  // Nothing is running and the meeting is waiting to hear whether to try failed seats again or carry on.
+  paused: boolean;
 }

@@ -89,6 +89,7 @@ function toEntry(v: unknown): Entry {
     response: nullableText(o.response, "answer"),
     error: nullableText(o.error, "error", 5000),
     started: date(o.started, "time"),
+    ...maybe(o, "earlierErrors", (x) => list(x, "earlier errors", 20).map((e) => text(e, "error", 5000))),
     ...maybe(o, "finished", (x) => date(x, "time")),
   };
 }

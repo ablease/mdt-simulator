@@ -4,8 +4,8 @@ import { friendly, friendlyImageError, ProviderError, type Part, type Provider, 
 import { chairPrompt, discussPrompt, firstPrompt, imageLabel, imagingPrompt, seeImagesNote, withImagingReport } from "../prompts/prompts";
 import { CHAIR, ROLES, type Role } from "../prompts/roles";
 import type { Choice } from "../storage/settings";
-import { CHAIR_ROUND, discussionName, FIRST, IMAGING, plannedRounds, roundDesc } from "./rounds";
-import type { CardView, Entry, MeetingRecord, MeetingView, RoundView } from "./types";
+import { CHAIR_ROUND, discussionName, FIRST, IMAGING, IMAGING_CARRY_ON, plannedRounds, roundDesc } from "./rounds";
+import type { CardView, Entry, MeetingRecord, MeetingView } from "./types";
 
 export interface MeetingConfig {
   caseId: string;
@@ -45,7 +45,7 @@ const imageParts = (images: ImageInput[]): Part[] => images.flatMap((img, i): Pa
 ]);
 
 const RADIOLOGIST = ROLES.find((r) => r.id === "rad")!;
-const IDLE: MeetingView = { running: false, steps: [], active: 0, rounds: [], record: null };
+const IDLE: MeetingView = { running: false, steps: [], active: 0, rounds: [], record: null, startedAt: null, planned: 0, retryable: [], paused: false };
 
 // Runs one meeting at a time and publishes a fresh MeetingView after every change,
 // in the shape React's useSyncExternalStore expects.
@@ -54,6 +54,10 @@ export class MeetingEngine {
   private listeners = new Set<() => void>();
   private stopped = false;
   private controllers = new Set<AbortController>();
+  // Failed seats waiting to hear whether to try again (true) or carry on without them (false), by card id.
+  private decisions = new Map<string, (retry: boolean) => void>();
+  // Seats with a call on the way. The meeting is paused when none are and some are waiting for a decision.
+  private working = new Set<string>();
   private sleep: (ms: number, signal: AbortSignal) => Promise<void>;
   private now: () => Date;
 
@@ -72,10 +76,36 @@ export class MeetingEngine {
   stop = () => {
     this.stopped = true;
     this.controllers.forEach((c) => c.abort());
+    this.decide([...this.decisions.keys()], false);
   };
 
+  // Try one failed seat again.
+  retry = (id: string) => this.decide([id], true);
+  retryAll = () => this.decide([...this.decisions.keys()], true);
+  // Let the failed seats go and move on to the next round.
+  carryOn = () => this.decide([...this.decisions.keys()], false);
+
+  private decide(ids: string[], retry: boolean) {
+    for (const id of ids) {
+      const answer = this.decisions.get(id);
+      if (!answer) continue;
+      this.decisions.delete(id);
+      // Marked as working straight away, so the meeting doesn't look paused while the call gets going.
+      if (retry) {
+        this.working.add(id);
+        this.patchCard(id, { status: "waiting", text: "", notice: null, error: null });
+      }
+      answer(retry);
+    }
+    this.set({});
+  }
+
   private set(patch: Partial<MeetingView>) {
-    this.view = { ...this.view, ...patch };
+    const view = { ...this.view, ...patch };
+    // In seat order, whichever failed first.
+    view.retryable = view.rounds.flatMap((r) => r.cards.map((c) => c.id)).filter((id) => this.decisions.has(id));
+    view.paused = view.retryable.length > 0 && this.working.size === 0;
+    this.view = view;
     this.listeners.forEach((fn) => fn());
   }
 
@@ -88,18 +118,24 @@ export class MeetingEngine {
     this.set({ rounds: this.view.rounds.map((r, i) => i === round ? { ...r, cards: [...r.cards, card] } : r) });
   }
 
-  private patchCard(round: number, id: string, patch: Partial<CardView>) {
+  // Card ids are unique across the meeting: the round number and the seat.
+  private patchCard(id: string, patch: Partial<CardView>) {
     this.set({
-      rounds: this.view.rounds.map((r: RoundView, i) => i !== round ? r
-        : { ...r, cards: r.cards.map((c) => c.id === id ? { ...c, ...patch } : c) }),
+      rounds: this.view.rounds.map((r) => r.cards.some((c) => c.id === id)
+        ? { ...r, cards: r.cards.map((c) => c.id === id ? { ...c, ...patch } : c) } : r),
     });
   }
 
-  // One AI call for one seat, retrying busy or rate-limited providers twice before giving up.
+  private card(id: string): CardView | undefined {
+    return this.view.rounds.flatMap((r) => r.cards).find((c) => c.id === id);
+  }
+
+  // One seat's turn in a round. If its call fails, the seat waits until it's tried again or let go,
+  // so every later round sees the answer from the retry.
   private async call(round: number, role: Role, choice: Choice, prompt: string, entries: Entry[], opts: CallOptions = {}): Promise<string | null> {
     const p = this.deps.providers[choice.pid];
-    const key = this.deps.getKey(choice.pid).trim();
     const id = round + ":" + role.id;
+    this.working.add(id);
     const images = opts.images?.length ? opts.images : null;
     const labels = images?.map((img, i) => imageLabel(i, img.caption));
     this.addCard(round, {
@@ -113,25 +149,48 @@ export class MeetingEngine {
       response: null, error: null, started: this.now().toISOString(),
     };
     entries.push(entry);
+    const parts: Part[] = [...(images ? imageParts(images) : []), { type: "text", text: prompt }];
+    try {
+      for (;;) {
+        const text = await this.attempt(id, p, choice, parts, entry, !!images);
+        if (text !== null || this.stopped) return text;
+        const retry = await new Promise<boolean>((answer) => {
+          this.working.delete(id);
+          this.decisions.set(id, answer);
+          this.set({});
+        });
+        if (!retry) return null;
+        entry.earlierErrors = [...(entry.earlierErrors ?? []), entry.error!];
+        entry.error = null;
+        entry.started = this.now().toISOString();
+      }
+    } finally {
+      if (this.working.delete(id)) this.set({});
+    }
+  }
+
+  // One AI call, retrying busy or rate-limited providers twice before giving up.
+  private async attempt(id: string, p: Provider, choice: Choice, parts: Part[], entry: Entry, withImages: boolean): Promise<string | null> {
     if (this.stopped) {
-      this.patchCard(round, id, { status: "stopped", error: "Stopped." });
+      this.patchCard(id, { status: "stopped", error: "Stopped." });
       entry.error = "stopped";
       return null;
     }
+    // Read now, so a key fixed in Settings while the meeting waits is the one used.
+    const key = this.deps.getKey(choice.pid).trim();
     const ctl = new AbortController();
     this.controllers.add(ctl);
-    this.patchCard(round, id, { status: "thinking" });
-    const parts: Part[] = [...(images ? imageParts(images) : []), { type: "text", text: prompt }];
+    this.patchCard(id, { status: "thinking" });
     let lastText = "";
     try {
       for (let attempt = 0; ; attempt++) {
         try {
           const text = await p.stream({
             key, model: choice.model, parts, signal: ctl.signal,
-            onText: (t) => { lastText = t; this.patchCard(round, id, { status: "speaking", text: t, notice: null }); },
+            onText: (t) => { lastText = t; this.patchCard(id, { status: "speaking", text: t, notice: null }); },
           });
           if (!text.trim()) throw new ProviderError("The model returned an empty answer.", 0);
-          this.patchCard(round, id, { status: "done", text, notice: null });
+          this.patchCard(id, { status: "done", text, notice: null });
           entry.response = text;
           entry.finished = this.now().toISOString();
           return text;
@@ -139,7 +198,7 @@ export class MeetingEngine {
           const status = (e as ProviderError).status ?? 0;
           const retryable = (status === 429 || status >= 500) && !lastText && attempt < 2 && !this.stopped;
           if (!retryable) throw e;
-          this.patchCard(round, id, { status: "retrying", notice: p.label + " is busy, retrying…" });
+          this.patchCard(id, { status: "retrying", notice: p.label + " is busy, retrying…" });
           await this.sleep(4000 * (attempt + 1), ctl.signal);
         }
       }
@@ -147,11 +206,8 @@ export class MeetingEngine {
       const err = e as { name?: string; status?: number; message?: string };
       const aborted = err.name === "AbortError";
       entry.error = aborted ? "stopped" : (err.status ? err.status + ": " : "") + err.message;
-      // A bad key or no connection will fail every other call too, so end the meeting now.
-      if (err.status === 401 || err.status === 403 || e instanceof TypeError) this.stop();
-      let message = images ? friendlyImageError(e, p.label, choice.model, p.suggestions[0]) : friendly(e, p.label);
-      if (opts.imaging && !this.stopped) message += " The meeting will carry on without an imaging report.";
-      this.patchCard(round, id, { status: aborted ? "stopped" : "failed", text: lastText, notice: null, error: message });
+      const message = withImages ? friendlyImageError(e, p.label, choice.model, p.suggestions[0]) : friendly(e, p.label);
+      this.patchCard(id, { status: aborted ? "stopped" : "failed", text: lastText, notice: null, error: message });
       return null;
     } finally {
       this.controllers.delete(ctl);
@@ -163,6 +219,8 @@ export class MeetingEngine {
     const images = cfg.images ?? [];
     const n = images.length;
     this.stopped = false;
+    this.decisions.clear();
+    this.working.clear();
     const labels = plannedRounds(n > 0, extra);
     const offset = n ? 1 : 0;
     const seats = roles.concat([CHAIR]).map((r) => ({
@@ -177,7 +235,10 @@ export class MeetingEngine {
       } : {}),
       seats, discussionRounds: extra, startedAt: this.now().toISOString(), rounds: [],
     };
-    this.set({ running: true, steps: labels, active: 0, rounds: [], record: null });
+    this.set({
+      running: true, steps: labels, active: 0, rounds: [], record: null, startedAt: record.startedAt,
+      planned: (n ? 1 : 0) + roles.length * (1 + extra) + 1,
+    });
 
     let round: number;
     let entries: Entry[];
@@ -191,6 +252,10 @@ export class MeetingEngine {
       record.rounds.push({ name: IMAGING, entries });
       const report = await this.call(round, rad, choiceFor(rad), imagingPrompt(rad, text, n), entries, { images, imaging: true });
       if (report) caseForSeats = withImagingReport(text, report, n);
+      else if (!this.stopped) {
+        const id = round + ":" + rad.id;
+        this.patchCard(id, { error: this.card(id)!.error + IMAGING_CARRY_ON });
+      }
       if (!this.stopped) this.set({ active: offset });
     }
 

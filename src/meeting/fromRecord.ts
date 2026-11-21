@@ -3,7 +3,7 @@ import { dataUrlOf } from "../images/process";
 import { friendly, friendlyImageError, PIDS, PROVIDERS, ProviderError } from "../providers";
 import { imageLabel } from "../prompts/prompts";
 import { ALL_SEATS } from "../prompts/roles";
-import { CHAIR_ROUND, FIRST, IMAGING, plannedRounds, roundDesc } from "./rounds";
+import { CHAIR_ROUND, FIRST, IMAGING, IMAGING_CARRY_ON, plannedRounds, roundDesc } from "./rounds";
 import type { CardView, Entry, MeetingRecord, MeetingView } from "./types";
 
 const colourOf = (roleId: string) => ALL_SEATS.find((r) => r.id === roleId)?.c ?? "var(--muted)";
@@ -21,7 +21,7 @@ export function shownError(e: Entry, imaging: boolean, meetingCarriedOn: boolean
   else err = new ProviderError(e.error, 0);
   const pid = pidOf(e.provider);
   let message = e.images?.length ? friendlyImageError(err, e.provider, e.model, pid && PROVIDERS[pid].suggestions[0]) : friendly(err, e.provider);
-  if (imaging && meetingCarriedOn) message += " The meeting will carry on without an imaging report.";
+  if (imaging && meetingCarriedOn) message += IMAGING_CARRY_ON;
   return message;
 }
 
@@ -34,6 +34,10 @@ export function viewFromRecord(rec: MeetingRecord): MeetingView {
     steps,
     active: rec.stoppedEarly ? -1 : steps.length,
     record: rec,
+    startedAt: rec.startedAt,
+    planned: (images.length ? 1 : 0) + (rec.seats.length - 1) * (1 + rec.discussionRounds) + 1,
+    retryable: [],
+    paused: false,
     rounds: rec.rounds.map((round, i) => ({
       name: round.name,
       desc: roundDesc(round.name),

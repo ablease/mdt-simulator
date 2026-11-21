@@ -3,6 +3,8 @@ export const IMAGING = "Imaging review";
 export const FIRST = "First opinions";
 export const CHAIR_ROUND = "Chair's decision";
 export const discussionName = (k: number) => "Discussion " + k;
+// Added to a failed imaging review's message once the meeting has moved on without it.
+export const IMAGING_CARRY_ON = " The meeting will carry on without an imaging report.";
 
 export function roundDesc(name: string): string {
   if (name === IMAGING) return "The radiologist reviews the attached images before the meeting. The other consultants will read this report.";

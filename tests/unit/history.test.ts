@@ -6,6 +6,7 @@ import { agreementOf, anyAnswer, outcomeOf, panelOf } from "../../src/meeting/su
 import { ProviderError, PROVIDERS, type Provider, type ProviderId, type StreamRequest } from "../../src/providers";
 import { ROLES } from "../../src/prompts/roles";
 import { dec } from "../../src/storage/settings";
+import { answerPauses } from "../support/pauses";
 import { CHAIR_ANSWER, sampleRecord } from "../support/records";
 
 const withChair = (answer: string) => sampleRecord({ rounds: [{ name: "Chair's decision", entries: [{ ...sampleRecord().rounds[2].entries[0], response: answer }] }] });
@@ -52,8 +53,9 @@ describe("viewFromRecord", () => {
   });
 
   it("matches what the screen showed while the meeting ran", async () => {
-    // A meeting with images, a radiologist whose model can't read them, a busy provider and a network
-    // failure, which ends the meeting before the chair.
+    // A meeting with images, a radiologist whose model can't read them, a busy provider, a seat that
+    // answers when tried again, and a network failure, after which the meeting is stopped before the chair.
+    let radFailed = false;
     const fake = (id: ProviderId): Provider => ({
       id, label: PROVIDERS[id].label, suggestions: PROVIDERS[id].suggestions, defaultModel: "m", keyPrefix: "", keyHelp: { url: "", linkText: "", after: "" },
       listModels: async () => [],
@@ -61,6 +63,7 @@ describe("viewFromRecord", () => {
         const prompt = (req.parts[req.parts.length - 1] as { text: string }).text;
         if (prompt.includes("structured report")) throw new ProviderError("image_url is only supported by certain models.", 400);
         if (prompt.includes("first opinion") && prompt.includes(ROLES[1].brief)) throw new ProviderError("Rate limit", 429);
+        if (prompt.includes("first opinion") && prompt.includes(ROLES[2].brief) && !radFailed) { radFailed = true; throw new ProviderError("Overloaded", 400); }
         if (prompt.includes("Discussion round 1") && prompt.includes(ROLES[0].brief)) throw new TypeError("Failed to fetch");
         req.onText("## View\nfine");
         return "## View\nfine";
@@ -70,13 +73,17 @@ describe("viewFromRecord", () => {
       providers: { openai: fake("openai"), anthropic: fake("anthropic") }, getKey: () => "k",
       sleep: async () => {}, now: () => new Date("2026-11-21T10:00:00Z"),
     });
+    const pauses = answerPauses(engine, ["carry on", "retry", "carry on", "stop"]);
     const rec = await engine.run({
       caseId: "pji-hip", caseTitle: "Test", caseText: "CASE", roles: ROLES.slice(0, 3), discussionRounds: 1,
       choiceFor: (r) => dec(r.id === "chair" ? "anthropic|claude-x" : "openai|gpt-x"),
       images: [{ caption: "AP pelvis", mediaType: "image/jpeg", width: 2, height: 2, base64: "/9j/AAAA" }], showImagesToAll: true,
     });
+    expect(pauses).toEqual([["0:rad"], ["1:micro", "1:rad"], ["1:micro"], ["2:surg"]]);
+    expect(rec.rounds[1].entries[2].earlierErrors).toEqual(["400: Overloaded"]);
     const live = engine.getSnapshot();
     const saved = viewFromRecord(rec);
+    expect(saved).toEqual({ ...live, rounds: saved.rounds });
     expect(saved.steps).toEqual(live.steps);
     expect(saved.active).toEqual(live.active);
     const pick = (v: typeof live) => v.rounds.map((r) => ({ ...r, cards: r.cards.map(({ notice, ...c }) => c) }));

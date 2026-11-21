@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildPdf } from "../../src/export/pdfDocument";
 import { MeetingEngine, type MeetingConfig } from "../../src/meeting/engine";
 import { ProviderError, type Provider, type ProviderId, type StreamRequest } from "../../src/providers";
 import { ROLES } from "../../src/prompts/roles";
 import { dec } from "../../src/storage/settings";
+import { answerPauses } from "../support/pauses";
 
 type Script = (prompt: string, req: StreamRequest) => Promise<string>;
 
@@ -30,13 +31,13 @@ function fake(id: ProviderId, script: Script): Provider {
 const roleIn = (prompt: string) => prompt.includes("You are the chair") ? "chair" : ROLES.find((r) => prompt.includes(r.brief))!.id;
 const isImaging = (prompt: string) => prompt.includes("write a structured report on these images");
 
-function setup(script: Script) {
+function setup(script: Script, getKey = () => "sk-test") {
   const sleeps: number[] = [];
-  const sent: { prompt: string; types: string[] }[] = [];
-  const provider = fake("openai", async (p, req) => { sent.push({ prompt: p, types: req.parts.map((x) => x.type) }); return script(p, req); });
+  const sent: { prompt: string; types: string[]; key: string }[] = [];
+  const provider = fake("openai", async (p, req) => { sent.push({ prompt: p, types: req.parts.map((x) => x.type), key: req.key }); return script(p, req); });
   const engine = new MeetingEngine({
     providers: { openai: provider, anthropic: fake("anthropic", script) },
-    getKey: () => "sk-test",
+    getKey,
     sleep: async (ms, signal) => { sleeps.push(ms); if (signal.aborted) throw new DOMException("Aborted", "AbortError"); },
     now: () => new Date("2026-11-21T10:00:00Z"),
   });
@@ -61,6 +62,8 @@ describe("MeetingEngine", () => {
     expect(view.running).toBe(false);
     expect(view.active).toBe(3);
     expect(view.rounds.flatMap((r) => r.cards.map((c) => c.status))).toEqual(Array(7).fill("done"));
+    expect(view.planned).toBe(7);
+    expect(rec.rounds.flatMap((r) => r.entries).some((e) => "earlierErrors" in e)).toBe(false);
   });
 
   it("retries a busy provider twice with growing waits, then succeeds", async () => {
@@ -74,12 +77,14 @@ describe("MeetingEngine", () => {
     expect(rec.rounds[0].entries[0].response).toBe("ok");
   });
 
-  it("gives up after three attempts and keeps the meeting going", async () => {
+  it("gives up after three attempts, then carries on without the seat when told to", async () => {
     const { engine, cfg, sleeps } = setup(async (p) => {
       if (roleIn(p) === "surg" && p.includes("first opinion")) throw new ProviderError("Rate limit", 429);
       return "ok from " + roleIn(p);
     });
+    const pauses = answerPauses(engine, ["carry on"]);
     const rec = await engine.run(cfg);
+    expect(pauses).toEqual([["0:surg"]]);
     expect(sleeps).toEqual([4000, 8000]);
     expect(rec.rounds[0].entries[0].error).toBe("429: Rate limit");
     expect(rec.rounds).toHaveLength(3);
@@ -95,6 +100,7 @@ describe("MeetingEngine", () => {
       if (roleIn(p) === "surg") { req.onText("partial"); throw new ProviderError("dropped", 500); }
       return "ok";
     });
+    answerPauses(engine);
     const rec = await engine.run(cfg);
     expect(sleeps).toEqual([]);
     expect(engine.getSnapshot().rounds[0].cards[0]).toMatchObject({ status: "failed", text: "partial" });
@@ -103,17 +109,93 @@ describe("MeetingEngine", () => {
 
   it("treats an empty answer as a failure without retrying", async () => {
     const { engine, cfg, sleeps } = setup(async (p) => roleIn(p) === "micro" ? "  " : "ok");
+    answerPauses(engine);
     const rec = await engine.run(cfg);
     expect(sleeps).toEqual([]);
     expect(rec.rounds[0].entries[1].error).toBe("The model returned an empty answer.");
   });
 
-  it("stops the whole meeting when a key is rejected", async () => {
-    const { engine, cfg } = setup(async () => { throw new ProviderError("bad key", 401); });
+  it("waits after a rejected key, then uses the corrected key when the seats are tried again", async () => {
+    let key = "sk-wrong";
+    const { engine, cfg, sent } = setup(async (_p, req) => {
+      if (req.key !== "sk-right") throw new ProviderError("bad key", 401);
+      return "ok";
+    }, () => key);
+    const pauses = answerPauses(engine, ["retry"], () => { key = "sk-right"; });
+    const rec = await engine.run(cfg);
+    expect(pauses).toEqual([["0:surg", "0:micro", "0:rad"]]);
+    expect(rec.stoppedEarly).toBe(false);
+    expect(rec.rounds.map((r) => r.name)).toEqual(["First opinions", "Discussion 1", "Chair's decision"]);
+    expect(rec.rounds[0].entries.map((e) => [e.response, e.error, e.earlierErrors])).toEqual(Array(3).fill(["ok", null, ["401: bad key"]]));
+    // The same prompt each time.
+    expect(sent.filter((s) => roleIn(s.prompt) === "surg" && s.prompt.includes("first opinion")).map((s) => s.key)).toEqual(["sk-wrong", "sk-right"]);
+    expect(new Set(sent.slice(0, 6).map((s) => s.prompt)).size).toBe(3);
+    expect(engine.getSnapshot().rounds[0].cards.map((c) => [c.status, c.error])).toEqual(Array(3).fill(["done", null]));
+  });
+
+  it("gives the retried answer to the discussion and the chair", async () => {
+    let failed = false;
+    const { engine, cfg } = setup(async (p) => {
+      if (roleIn(p) === "micro" && p.includes("first opinion") && !failed) { failed = true; throw new ProviderError("Overloaded", 529); }
+      return "view from " + roleIn(p);
+    });
+    // The busy provider is retried twice automatically before the seat is given up on.
+    let calls = 0;
+    answerPauses(engine, ["retry"], () => { calls++; });
+    const rec = await engine.run(cfg);
+    expect(calls).toBe(0);
+    expect(rec.rounds[0].entries[1].response).toBe("view from micro");
+
+    let tries = 0;
+    const second = setup(async (p) => {
+      if (roleIn(p) === "micro" && p.includes("first opinion") && tries++ < 3) throw new ProviderError("Overloaded", 529);
+      return "view from " + roleIn(p);
+    });
+    const pauses = answerPauses(second.engine, ["retry"]);
+    const rec2 = await second.engine.run(second.cfg);
+    expect(pauses).toEqual([["0:micro"]]);
+    expect(rec2.rounds[0].entries[1]).toMatchObject({ response: "view from micro", error: null, earlierErrors: ["529: Overloaded"] });
+    expect(rec2.rounds[1].entries[0].prompt).toContain("### Consultant microbiologist\nview from micro");
+    expect(rec2.rounds[2].entries[0].prompt).toContain("=== First opinions ===\n### Revision arthroplasty surgeon\nview from surg\n\n### Consultant microbiologist\nview from micro");
+  });
+
+  it("only pauses once the rest of the round has finished, and can retry one seat at a time", async () => {
+    let release!: () => void;
+    const held = new Promise<void>((res) => { release = res; });
+    let micro = 0;
+    const { engine, cfg } = setup(async (p) => {
+      const role = roleIn(p);
+      if (!p.includes("first opinion")) return "ok";
+      if (role === "surg") throw new ProviderError("bad request", 400);
+      if (role === "micro" && micro++ === 0) throw new ProviderError("bad request", 400);
+      if (role === "rad") await held;
+      return "ok";
+    });
+    const running = engine.run(cfg);
+    await vi.waitFor(() => expect(engine.getSnapshot().retryable).toEqual(["0:surg", "0:micro"]));
+    // The radiologist is still answering, so the meeting isn't paused yet, but the failed seats can already be retried.
+    expect(engine.getSnapshot().paused).toBe(false);
+    engine.retry("0:micro");
+    await vi.waitFor(() => expect(engine.getSnapshot().rounds[0].cards[1].status).toBe("done"));
+    expect(engine.getSnapshot().retryable).toEqual(["0:surg"]);
+    release();
+    await vi.waitFor(() => expect(engine.getSnapshot().paused).toBe(true));
+    expect(engine.getSnapshot().active).toBe(0);
+    engine.carryOn();
+    const rec = await running;
+    expect(engine.getSnapshot()).toMatchObject({ paused: false, retryable: [] });
+    expect(rec.rounds.map((r) => r.entries.filter((e) => e.response).length)).toEqual([2, 3, 1]);
+    expect(rec.rounds[0].entries[0].earlierErrors).toBeUndefined();
+  });
+
+  it("ends the meeting if Stop is pressed while it waits", async () => {
+    const { engine, cfg } = setup(async (p) => { if (roleIn(p) === "rad") throw new ProviderError("Overloaded", 503); return "ok"; });
+    answerPauses(engine, ["stop"]);
     const rec = await engine.run(cfg);
     expect(rec.stoppedEarly).toBe(true);
     expect(rec.rounds.map((r) => r.name)).toEqual(["First opinions"]);
-    expect(engine.getSnapshot().active).toBe(-1);
+    expect(rec.rounds[0].entries[2].error).toBe("503: Overloaded");
+    expect(engine.getSnapshot()).toMatchObject({ active: -1, running: false, paused: false, retryable: [] });
   });
 
   it("marks seats that hadn't started as stopped when Stop is pressed", async () => {
@@ -163,16 +245,21 @@ describe("MeetingEngine", () => {
 
     it("carries on without a report if the imaging review fails", async () => {
       const { engine, cfg, sent } = setup(async (p) => { if (isImaging(p)) throw new ProviderError("image_url is only supported by certain models", 400); return "ok"; });
+      let whilePaused = "";
+      answerPauses(engine, ["carry on"], () => { whilePaused = engine.getSnapshot().rounds[0].cards[0].error!; });
       const rec = await engine.run({ ...cfg, images: IMAGES });
+      expect(whilePaused).toMatch(/run the meeting again\.$/);
       expect(rec.stoppedEarly).toBe(false);
       expect(rec.rounds).toHaveLength(4);
       expect(sent.slice(1).every((s) => !s.prompt.includes("IMAGING REPORT"))).toBe(true);
       expect(engine.getSnapshot().rounds[0].cards[0].error).toBe("OpenAI couldn't read the images with gpt-test. It said: \"image_url is only supported by certain models\". Choose a model that can read images for this seat, such as vision-model, and run the meeting again. The meeting will carry on without an imaging report.");
     });
 
-    it("ends the meeting after the imaging review if the key is rejected", async () => {
+    it("ends the meeting after the imaging review if it's stopped there", async () => {
       const { engine, cfg } = setup(async () => { throw new ProviderError("bad key", 401); });
+      answerPauses(engine, ["stop"]);
       const rec = await engine.run({ ...cfg, images: IMAGES });
+      expect(engine.getSnapshot().planned).toBe(8);
       expect(rec.rounds.map((r) => r.name)).toEqual(["Imaging review"]);
       expect(engine.getSnapshot().rounds[0].cards[0].error).toBe("OpenAI rejected the API key. Check you pasted the whole key into the right box.");
     });

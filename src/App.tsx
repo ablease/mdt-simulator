@@ -123,7 +123,15 @@ export function App() {
     document.querySelector<HTMLElement>("main h1")?.focus({ preventScroll: true });
   }, [routeKey]);
 
-  const meetingProps = { onStop: engine.stop, detailsOpen, onToggleDetails: toggleDetails, onRerun: rerun, onDelete: remove };
+  // Say so in the tab's title while a meeting waits, in case another tab is in front.
+  useEffect(() => {
+    if (!view.paused) return;
+    const before = document.title;
+    document.title = "Waiting for you · " + before;
+    return () => { document.title = before; };
+  }, [view.paused]);
+
+  const meetingProps = { detailsOpen, onToggleDetails: toggleDetails, onRerun: rerun, onDelete: remove };
   let page;
   let details: Session | null = null;
   if (route.page === "new") {
@@ -142,7 +150,7 @@ export function App() {
     }
   } else if (route.page === "meeting") {
     details = session;
-    page = <MeetingPage {...meetingProps} view={view} title={session?.caseTitle || "Meeting"} saved={null} note={outcome && !outcome.saved ? outcome.note : null} hasDetails={!!session} />;
+    page = <MeetingPage {...meetingProps} view={view} title={session?.caseTitle || "Meeting"} saved={null} note={outcome && !outcome.saved ? outcome.note : null} controls={engine} hasDetails={!!session} />;
   } else if (route.page === "history") {
     page = <HistoryPage meetings={meetings} />;
   } else {
