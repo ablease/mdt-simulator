@@ -238,7 +238,8 @@ table.history input { accent-color: var(--accent); }
 }
 @media (max-width: 759px) {
   .notice-bar, .sidebar-inner { position: static; }
-  .status.live { top: 0; }
+  /* Too much of a small screen to keep covered, so it scrolls with the page. */
+  .status.live { position: static; margin: 0; padding: 0; border-bottom: 0; }
   .shell { min-height: 0; }
   .shell, .shell.with-details { grid-template-columns: minmax(0, 1fr); grid-template-areas: "side" "main" "details"; }
   .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
