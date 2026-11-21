@@ -6,14 +6,14 @@ Read this whole brief, then look at the existing code before you change anything
 
 ## Where things stand
 
-- **Repo:** `ablease/mdt-simulator`, served by GitHub Pages at https://ablease.github.io/mdt-simulator/.
+- **Repo:** `ablease/mdt-simulator`, served by GitHub Pages at <https://ablease.github.io/mdt-simulator/>.
 - **Code:** a single self-contained `index.html` (inline CSS and JS). There's no build step and no server.
 - **API access:** the browser calls the providers directly, using the user's own API keys:
   - OpenAI: `POST https://api.openai.com/v1/chat/completions`, streaming over SSE.
   - Anthropic: `POST https://api.anthropic.com/v1/messages`, streaming, with the headers `anthropic-version: 2023-06-01` and `anthropic-dangerous-direct-browser-access: true`.
 - **Keys:** each provider has its own key box with a "Check" button, which calls that provider's `/v1/models` to fill the model menus. Keys are kept in `localStorage` only if the user ticks "Remember my keys".
 - **Seats:** the surgeon, microbiologist, radiologist, peri-op physician/anaesthetist and an optional devil's advocate. The chair always attends. Each seat can use the default model or its own provider and model.
-- **Meeting flow:** first opinions (independent, run in parallel), then 1–2 discussion rounds (each seat sees the others' latest views), then the chair's decision. Responses stream into colour-coded cards, and each card can show the exact prompt it was sent. Prompts ask for fixed `## ` headings, which a small markdown-lite renderer formats.
+- **Meeting flow:** first opinions (independent, run in parallel), then 1–2 discussion rounds (each seat sees the others' latest views), then the chair's decision. Responses stream into colour-coded cards, and each card can show the exact prompt it was sent. Prompts ask for fixed `##` headings, which a small markdown-lite renderer formats.
 - **Cases:** four built-in fictional test cases plus a blank anonymised template. The case text is editable.
 - **Exports:** after a meeting the user can download JSON (the full record: seats, models, every prompt and response, timestamps) or a formatted A4 PDF built with pdfmake 0.2.7, loaded from cdnjs on demand. The PDF runs: panel, outcome, case summary, the rounds, then an appendix of the role instructions.
 - **Retries:** 429 and 5xx errors retry with backoff. A 401 or 403 stops the meeting with a plain-English message.
@@ -54,16 +54,19 @@ Move the single file into a small, maintainable project that still builds to **s
 **Goal:** the user can attach X-rays, CT/MRI key slices or clinical photos to a case. An imaging seat interprets them and feeds its view into the MDT.
 
 **Uploading**
+
 - Drag and drop, or a file picker. Accept **PNG and JPEG only** in this phase. DICOM is out of scope for now because DICOM headers usually contain patient identifiers; list it as a possible later phase, with de-identification.
 - Show thumbnails. Each image gets an optional caption, for example "AP pelvis, 3 months ago" or "CT axial, acetabulum".
 
 **De-identification safeguards, built into the upload flow**
+
 - Re-encode every image through a canvas, which strips EXIF and other metadata.
 - Before an image can be used, show a clear checklist the user must tick: "I have checked this image for names, hospital numbers, dates of birth and other identifiers, including text burned into the image."
 - Provide a simple **redaction tool**: draw black boxes over areas of the image, then apply them permanently before saving. Burned-in patient details on radiographs are common, so this matters.
 - Downscale large images to a sensible maximum (around 1,500px on the long edge) to control cost and stay within provider limits.
 
 **How images are used in the meeting**
+
 - Add an **imaging seat**. Upgrade the existing musculoskeletal radiologist role rather than adding a separate one, unless you think separating them is cleaner; explain your choice.
 - When images are attached, the imaging seat runs first, before the first opinions. It produces a structured imaging report with these headings:
   - Images reviewed
@@ -76,6 +79,7 @@ Move the single file into a small, maintainable project that still builds to **s
 - Show the imaging report as its own card and include it in the transcript and exports. Label it clearly: "AI image interpretation. Unvalidated, for research only."
 
 **Provider details**
+
 - OpenAI chat completions takes images as content parts: `{ "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,..." } }`.
 - Anthropic messages takes `{ "type": "image", "source": { "type": "base64", "media_type": "image/jpeg", "data": "..." } }`, placed before the text part.
 - Check the current API docs for both rather than relying on these notes.
@@ -84,18 +88,21 @@ Move the single file into a small, maintainable project that still builds to **s
 ## Feature 2: storing meetings and turning them into reports
 
 **Storage**
+
 - Default: keep everything in the browser with **IndexedDB**. That means case text, image blobs, the panel configuration, models, every prompt and response, and timestamps. No server needed.
 - Make it clear in the UI that meetings are stored on this computer only. Clearing browser data deletes them, so back up regularly.
 - **Backup and restore:** export all meetings, or selected ones, as a single file (JSON with images embedded, or a zip), and import it again. That's how he'd move between computers or share with a supervisor.
 - Present an optional cloud option to me as a separate proposal; don't build it yet. I know Azure, so the obvious candidate is Static Web Apps with Functions, Cosmos DB, Blob Storage, and Entra ID sign-in. Outline the information governance implications of storing case data in the cloud.
 
 **Meeting history**
+
 - A history view listing past meetings: date, case title, panel or models, outcome summary (the first line of the chair's decision), and the level of agreement.
 - Search and filter by case, model, provider and date.
 - Open a past meeting read-only. Add a "Rerun this case" action that loads the same case, images and panel.
 - Delete a meeting, with an in-page confirmation step. Don't use `confirm()`.
 
 **Research fields** (these matter for his study)
+
 - For each meeting, optional fields:
   - **Actual MDT decision**, so the real outcome can be compared with the simulated one
   - **Reviewer rating** of the simulated decision, such as agree / partly agree / disagree
@@ -103,6 +110,7 @@ Move the single file into a small, maintainable project that still builds to **s
 - Tag meetings with a case ID he chooses, so repeat runs of the same case group together. He'll want to run each case several times to check consistency.
 
 **Reports**
+
 - **Single-meeting PDF:** keep the current PDF and add the imaging report, the thumbnails with their captions, and the research fields when they're filled in.
 - **Word (.docx) export** of a single meeting, so he can edit it. Use a well-established library, for example `docx`.
 - **Comparison report** across selected meetings, for example the same case run five times, or with different panels. Include a summary table with one row per run: date, panel models, decision, level of agreement, actual decision, reviewer rating. Then show each run's chair decision side by side or in sequence.
