@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import { describe, type Choice } from "../storage/settings";
 
 // What a meeting was run with, kept when it starts so later edits to the next meeting don't change it.
 export interface Session {
@@ -7,7 +6,8 @@ export interface Session {
   caseText: string;
   images: { label: string; dataUrl: string }[];
   imagesSeenByAll: boolean;
-  seats: { id: string; name: string; colour: string; choice: Choice }[];
+  // Provider and model as shown, e.g. "OpenAI · gpt-5-mini".
+  seats: { id: string; name: string; colour: string; model: string }[];
   rounds: number;
   startedAt: Date;
 }
@@ -38,7 +38,7 @@ export function MeetingDetails({ session: s, open }: { session: Session; open: b
             {s.seats.map((seat) => (
               <li key={seat.id} style={{ "--c": seat.colour } as CSSProperties}>
                 <span className="dot" />
-                <span><b>{seat.name}</b><span className="mdl">{describe(seat.choice)}</span></span>
+                <span><b>{seat.name}</b><span className="mdl">{seat.model}</span></span>
               </li>
             ))}
           </ul>

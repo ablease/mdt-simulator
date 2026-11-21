@@ -4,6 +4,7 @@ import { PROVIDERS } from "./providers";
 import { imageLabel } from "./prompts/prompts";
 import { CHAIR } from "./prompts/roles";
 import { store } from "./storage/local";
+import { describe } from "./storage/settings";
 import { MeetingDetails, type Session } from "./ui/MeetingDetails";
 import { HistoryPage } from "./ui/pages/HistoryPage";
 import { MeetingPage } from "./ui/pages/MeetingPage";
@@ -39,7 +40,7 @@ export function App() {
       caseTitle: d.caseTitle, caseText: text,
       images: d.images.map((img, i) => ({ label: imageLabel(i, img.caption), dataUrl: img.dataUrl })),
       imagesSeenByAll: d.showAll,
-      seats: d.chosen.concat([CHAIR]).map((r) => ({ id: r.id, name: r.name, colour: r.c, choice: d.choiceFor(r) })),
+      seats: d.chosen.concat([CHAIR]).map((r) => ({ id: r.id, name: r.name, colour: r.c, model: describe(d.choiceFor(r)) })),
       rounds: d.rounds, startedAt: new Date(),
     });
     go({ page: "meeting" });

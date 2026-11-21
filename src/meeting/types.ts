@@ -1,7 +1,5 @@
-import type { Choice } from "../storage/settings";
-
-// The saved record of a meeting: what "Download JSON" writes out. Field order matches the
-// original app so exports stay comparable.
+// The saved record of a meeting: what "Download JSON" writes out and what's kept in the browser.
+// Fields from the original app come first, in its order, so older exports stay comparable.
 export interface Entry {
   roleId: string;
   role: string;
@@ -21,9 +19,25 @@ export interface Seat { roleId: string; role: string; brief: string; provider: s
 // An attached image, cleaned and re-encoded, with its JPEG data as base64.
 export interface RecordImage { label: string; caption: string; mediaType: "image/jpeg"; width: number; height: number; data: string }
 
+// What the researcher adds about a meeting. Kept with the meeting and in every export, but never sent to an AI provider.
+export const RATINGS = ["agree", "partly agree", "disagree"] as const;
+export type Rating = "" | (typeof RATINGS)[number];
+
+export interface Research {
+  // The researcher's own label for the case, so repeat runs group together, e.g. "PJI-01".
+  caseTag: string;
+  actualDecision: string;
+  rating: Rating;
+  notes: string;
+  // When any of these were last changed, used to pick the newer copy when restoring a backup. Null until edited.
+  updatedAt: string | null;
+}
+
 export interface MeetingRecord {
   tool: string;
   note: string;
+  // Set when the meeting is saved.
+  id?: string;
   caseId: string;
   caseTitle?: string;
   caseText: string;
@@ -36,7 +50,11 @@ export interface MeetingRecord {
   rounds: { name: string; entries: Entry[] }[];
   finishedAt?: string;
   stoppedEarly?: boolean;
+  research?: Research;
 }
+
+// A meeting as kept in the browser: always has an id and research fields.
+export type SavedRecord = MeetingRecord & { id: string; research: Research };
 
 // What the screen shows while a meeting runs.
 export type CardStatus = "waiting" | "thinking" | "speaking" | "retrying" | "done" | "failed" | "stopped";
@@ -46,7 +64,8 @@ export interface CardView {
   roleId: string;
   roleName: string;
   colour: string;
-  choice: Choice;
+  // Provider and model, e.g. "OpenAI · gpt-5-mini".
+  model: string;
   prompt: string;
   chair: boolean;
   // The radiologist's report on the attached images, shown with an "unvalidated" label.

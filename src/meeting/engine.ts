@@ -4,6 +4,7 @@ import { friendly, friendlyImageError, ProviderError, type Part, type Provider, 
 import { chairPrompt, discussPrompt, firstPrompt, imageLabel, imagingPrompt, seeImagesNote, withImagingReport } from "../prompts/prompts";
 import { CHAIR, ROLES, type Role } from "../prompts/roles";
 import type { Choice } from "../storage/settings";
+import { CHAIR_ROUND, discussionName, FIRST, IMAGING, plannedRounds, roundDesc } from "./rounds";
 import type { CardView, Entry, MeetingRecord, MeetingView, RoundView } from "./types";
 
 export interface MeetingConfig {
@@ -78,8 +79,8 @@ export class MeetingEngine {
     this.listeners.forEach((fn) => fn());
   }
 
-  private addRound(name: string, desc: string, single = false): number {
-    this.set({ rounds: [...this.view.rounds, { name, desc, single, cards: [] }] });
+  private addRound(name: string, single = false): number {
+    this.set({ rounds: [...this.view.rounds, { name, desc: roundDesc(name), single, cards: [] }] });
     return this.view.rounds.length - 1;
   }
 
@@ -102,7 +103,7 @@ export class MeetingEngine {
     const images = opts.images?.length ? opts.images : null;
     const labels = images?.map((img, i) => imageLabel(i, img.caption));
     this.addCard(round, {
-      id, roleId: role.id, roleName: role.name, colour: role.c, choice, prompt, chair: role.id === CHAIR.id,
+      id, roleId: role.id, roleName: role.name, colour: role.c, model: p.label + " · " + choice.model, prompt, chair: role.id === CHAIR.id,
       imaging: !!opts.imaging, images: images && images.map((img, i) => ({ label: labels![i], dataUrl: dataUrlOf(img.base64) })),
       status: "waiting", text: "", notice: null, error: null,
     });
@@ -162,7 +163,7 @@ export class MeetingEngine {
     const images = cfg.images ?? [];
     const n = images.length;
     this.stopped = false;
-    const labels = (n ? ["Imaging review"] : []).concat(["First opinions"], Array.from({ length: extra }, (_, i) => "Discussion " + (i + 1)), ["Chair's decision"]);
+    const labels = plannedRounds(n > 0, extra);
     const offset = n ? 1 : 0;
     const seats = roles.concat([CHAIR]).map((r) => ({
       roleId: r.id, role: r.name, brief: r.brief, provider: this.deps.providers[choiceFor(r).pid].label, model: choiceFor(r).model,
@@ -185,9 +186,9 @@ export class MeetingEngine {
 
     if (n) {
       const rad = roles.find((r) => r.id === RADIOLOGIST.id) ?? RADIOLOGIST;
-      round = this.addRound("Imaging review", "The radiologist reviews the attached images before the meeting. The other consultants will read this report.", true);
+      round = this.addRound(IMAGING, true);
       entries = [];
-      record.rounds.push({ name: "Imaging review", entries });
+      record.rounds.push({ name: IMAGING, entries });
       const report = await this.call(round, rad, choiceFor(rad), imagingPrompt(rad, text, n), entries, { images, imaging: true });
       if (report) caseForSeats = withImagingReport(text, report, n);
       if (!this.stopped) this.set({ active: offset });
@@ -195,9 +196,9 @@ export class MeetingEngine {
 
     let latest: Record<string, string> = {};
     if (!this.stopped) {
-      round = this.addRound("First opinions", "Each consultant reads the case alone. Nobody has seen anyone else's view yet.");
+      round = this.addRound(FIRST);
       const firstEntries: Entry[] = [];
-      record.rounds.push({ name: "First opinions", entries: firstEntries });
+      record.rounds.push({ name: FIRST, entries: firstEntries });
       const seeAll = n > 0 && !!cfg.showImagesToAll;
       const firstRound = round;
       await Promise.all(roles.map(async (r) => {
@@ -209,9 +210,9 @@ export class MeetingEngine {
 
     for (let k = 1; k <= extra && !this.stopped; k++) {
       this.set({ active: offset + k });
-      const discussionRound = this.addRound("Discussion " + k, "Everyone has now read all the other opinions and responds to them.");
+      const discussionRound = this.addRound(discussionName(k));
       const discussionEntries: Entry[] = [];
-      record.rounds.push({ name: "Discussion " + k, entries: discussionEntries });
+      record.rounds.push({ name: discussionName(k), entries: discussionEntries });
       const snapshot = Object.assign({}, latest);
       const next: Record<string, string> = {};
       await Promise.all(roles.map(async (r) => {
@@ -225,11 +226,11 @@ export class MeetingEngine {
     if (!this.stopped) {
       this.set({ active: labels.length - 1 });
       // The imaging report reaches the chair through the case text, so it isn't repeated in the transcript.
-      const transcript = record.rounds.filter((rd) => rd.name !== "Imaging review")
+      const transcript = record.rounds.filter((rd) => rd.name !== IMAGING)
         .map((rd) => "=== " + rd.name + " ===\n" + rd.entries.filter((e) => e.response).map((e) => "### " + e.role + "\n" + e.response).join("\n\n")).join("\n\n");
-      round = this.addRound("Chair's decision", "The chair reads the whole discussion and records the outcome.", true);
+      round = this.addRound(CHAIR_ROUND, true);
       entries = [];
-      record.rounds.push({ name: "Chair's decision", entries });
+      record.rounds.push({ name: CHAIR_ROUND, entries });
       await this.call(round, CHAIR, choiceFor(CHAIR), chairPrompt(caseForSeats, transcript), entries);
     }
     record.finishedAt = this.now().toISOString();

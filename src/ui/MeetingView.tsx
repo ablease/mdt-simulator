@@ -2,7 +2,6 @@ import { useState, type CSSProperties } from "react";
 import { downloadJson } from "../export/download";
 import { downloadPdf } from "../export/pdf";
 import type { CardView, MeetingRecord, MeetingView as View } from "../meeting/types";
-import { describe } from "../storage/settings";
 import { Markdown } from "./Markdown";
 import { href } from "./route";
 
@@ -18,7 +17,7 @@ function Card({ card }: { card: CardView }) {
   return (
     <article className={"card" + (card.chair ? " chair" : "")} style={{ "--c": card.colour } as CSSProperties}>
       <div className="who">
-        <div><b>{card.roleName}</b><span className="mdl">{describe(card.choice)}</span></div>
+        <div><b>{card.roleName}</b><span className="mdl">{card.model}</span></div>
         <span className="tag">{card.status}</span>
       </div>
       {card.imaging && <p className="ai-label">AI image interpretation. Unvalidated, for research only.</p>}
