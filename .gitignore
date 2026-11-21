@@ -1,0 +1,16 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+blob-report/
+coverage/
+.vite/
+*.local
+.env
+.env.*
+.DS_Store
+
+# Never commit API keys, real case data or downloaded meeting records.
+/private/
+mdt-*.json
+mdt-*.pdf
