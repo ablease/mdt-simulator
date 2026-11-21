@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    ignore:
+      # Pinned to match the original app's PDFs. Upgrade deliberately, not automatically.
+      - dependency-name: pdfmake
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
