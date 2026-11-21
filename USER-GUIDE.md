@@ -2,7 +2,7 @@
 
 The simulator runs a pretend MDT meeting on a hip or knee revision case. AI "consultants" each give an opinion, discuss each other's views, and an AI chair writes up the outcome. It's a research tool. Everything it produces is AI-generated and simulated, and none of it is clinical advice.
 
-Open it at **https://mdt.ablease.co.uk** and bookmark that address. Always use the bookmark, so you know you're on the real site.
+Open it at <https://mdt.ablease.co.uk> and bookmark that address. Always use the bookmark, so you know you're on the real site.
 
 ## Only use fictional or fully anonymised cases
 
@@ -23,14 +23,14 @@ The simulator uses your own account with an AI company, so the cost goes to you 
 
 You need at least one key. Having both lets you put different companies' models round the same table.
 
-**OpenAI**
+### OpenAI
 
 1. Go to platform.openai.com and sign up or sign in.
 2. Open **Billing** and add some credit. New accounts can't make calls without it.
 3. Open **API keys**, create a new key, and name it "MDT simulator".
 4. Copy the key straight away. It starts with `sk-`, and OpenAI only shows it once.
 
-**Anthropic**
+### Anthropic
 
 1. Go to console.anthropic.com and sign up or sign in.
 2. Open **Billing** and add some credit.
@@ -67,7 +67,22 @@ The list on the left has three links: **New meeting**, **History** and **Setting
 3. **Panel and models.** Tick the consultants you want. You need at least two, and the chair always attends. Each seat can use the default model or one of its own. Then choose one or two rounds of discussion.
 4. **Review and run.** Check the case, the images, and who sits at the table on which model. The simulator shows how many AI calls the meeting will make and which companies they go to. If something needs sorting out first, it says what and gives you a link to the right step. Press **Hold the meeting** when you're ready.
 
-The meeting page opens straight away. Answers appear as they're written, and a full meeting takes a minute or two. Press **Stop** at any point to end it early. The case and panel the meeting was run with are shown down the right-hand side. Press **Hide case and panel** if you want more room for the answers.
+The meeting page opens straight away. Answers appear as they're written, and a full meeting takes a minute or two. The line at the top shows which round you're in and how many answers are in so far, and it stays there with the **Stop** button as you scroll. Press **Stop** at any point to end the meeting early. The case and panel the meeting was run with are shown down the right-hand side. Press **Hide case and panel** if you want more room for the answers.
+
+As each round starts, the one before it folds up into a line of names, so the round in progress is the one you see. Click a round's name to open it again, or **Show every round** to open them all.
+
+### If a consultant doesn't answer
+
+Sometimes a call fails, for example because a key was rejected, the company was busy or your connection dropped. That card then says what went wrong, and once everyone else in the round has finished, the meeting waits for you. You can:
+
+- press **Try again** to ask the same question again, either on one card or for everyone who didn't answer;
+- press **Carry on without them** to move on. The rest of the meeting goes ahead without that answer.
+
+The next round doesn't start until you choose, so whatever you decide, everyone after that point reads the same discussion. If a key was the problem, go to **Settings**, correct it, then come back to the meeting from **Recent meetings** on the left and press **Try again**. The tab's title says "Waiting for you" while the meeting waits, in case you're looking at something else.
+
+Trying again sends exactly the same question. It won't help if the model itself is wrong for the seat, for example one that can't read images. In that case, carry on, then choose another model before you run the case again.
+
+The meeting isn't saved until it finishes or you stop it, so don't close the tab while it's waiting.
 
 When it finishes, or when you stop it, the meeting is saved on this computer automatically. You can then download it as a **PDF** report, a **Word** document you can edit, or a **JSON** file. The JSON file holds every prompt and answer, which is useful for research analysis. If you attached images, all three include them.
 
@@ -147,19 +162,27 @@ Captions are sent with the images, so keep them anonymous too. Write "AP pelvis,
 
 Only the radiologist sees the images, unless you tick **Let every consultant see the images**. Then each consultant also gets them with their first opinion. That costs more, because every first-opinion call then includes the images.
 
-While images are attached, the radiologist always attends, and their seat needs a model that can read images. All Claude models can, and so can gpt-5. If the model can't, the radiologist's card says so and suggests another, and the meeting carries on without an imaging report.
+While images are attached, the radiologist always attends, and their seat needs a model that can read images. All Claude models can, and so can gpt-5. If the model can't, the radiologist's card says so and suggests another. The meeting then waits for you to carry on without an imaging report, or to stop.
 
 Images are saved with the meeting once it has run. If you reload the page before running the meeting, you'll need to add them again.
+
+## Light and dark
+
+The simulator follows your computer's light or dark setting. To choose one yourself, go to **Settings** and pick **Light** or **Dark** under **Appearance**. PDFs and Word files always use the light colours.
+
+## Using the keyboard
+
+Everything works without a mouse. **Tab** moves between controls, and **Enter** or **Space** presses them. **Escape** closes the black-out editor and cancels a delete. When the simulator first opens, the first press of **Tab** reaches **Skip to main content**, which jumps past the links on the left.
 
 ## When something goes wrong
 
 The simulator explains problems in plain words. The common ones:
 
-- **"rejected the API key"**: the key is wrong or incomplete. Copy it again and paste the whole thing into the right box.
+- **"rejected the API key"**: the key is wrong or incomplete. The meeting waits. Copy the key again, paste the whole thing into the right box in Settings, then go back to the meeting and press **Try again**.
 - **"rate limit or credit limit reached"**: you've run out of credit or hit your spending limit, or the account is new and has low limits. Add credit, wait a minute, or use fewer consultants on that company.
-- **"Couldn't reach OpenAI"** (or Anthropic): check your internet connection. Some hospital networks block AI services, so try from home if it keeps happening.
-- **"doesn't recognise that model name"**: press **Check** next to the key and pick a model from the list.
+- **"Couldn't reach OpenAI"** (or Anthropic): check your internet connection, then press **Try again**. Some hospital networks block AI services, so try from home if it keeps happening.
+- **"doesn't recognise that model name"**: trying again won't help. Carry on without that seat, then press **Check** next to the key and pick a model from the list before the next meeting.
 - **"couldn't read the images"**: the radiologist's model can't take images. Choose one that can for the radiologist, such as gpt-5 or claude-sonnet-5-5, and run the meeting again.
-- **"This meeting wasn't saved, because no consultant answered"**: every call failed, usually because of a key problem. Read the message on the cards, fix it, and run the meeting again.
+- **"This meeting wasn't saved, because no consultant answered"**: every call failed and the meeting was stopped, usually because of a key problem. Read the message on the cards, fix it, and run the meeting again.
 - **"This browser isn't letting the simulator save anything"**: this usually means a private or incognito window. Open the simulator in a normal window, or download each meeting before you close the tab.
 - **"This file isn't a backup or a meeting from the Revision MDT Simulator"**: the file you chose to restore wasn't made by the simulator. Look for a file whose name starts with `mdt-backup-` or `mdt-`.
