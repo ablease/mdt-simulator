@@ -18,3 +18,20 @@ export function fitWithin(width: number, height: number, max: number): { width: 
   const scale = Math.min(1, max / Math.max(width, height));
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
+
+// True if a JPEG carries anything besides pixels: EXIF or other APPn blocks, comments, or a JFIF
+// header with a thumbnail. Images this app makes never do; one restored from a backup might.
+export function jpegHasMetadata(b: Uint8Array): boolean {
+  let i = 2;
+  while (i + 4 <= b.length) {
+    if (b[i] !== 0xff) return true;
+    const marker = b[i + 1];
+    if (marker === 0xff) { i += 1; continue; }
+    if (marker === 0xda || marker === 0xd9) return false;
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { i += 2; continue; }
+    const len = (b[i + 2] << 8) | b[i + 3];
+    if ((marker >= 0xe1 && marker <= 0xef) || marker === 0xfe || (marker === 0xe0 && len > 16)) return true;
+    i += 2 + len;
+  }
+  return true;
+}

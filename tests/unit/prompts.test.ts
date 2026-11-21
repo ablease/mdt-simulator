@@ -1,5 +1,5 @@
-// Freezes the prompt wording and role briefs. The parity tests prove these match the original app;
-// if a snapshot changes, the prompts' meaning may have changed and needs agreement first.
+// Freezes the prompt wording and role briefs, which were checked byte for byte against the original app
+// before it was retired. If a snapshot changes, the prompts' meaning may have changed and needs agreement first.
 import { describe, expect, it } from "vitest";
 import { CASES } from "../../src/cases/cases";
 import { chairPrompt, discussPrompt, FRAME, firstPrompt, imageLabel, imagingPrompt, seeImagesNote, withImagingReport } from "../../src/prompts/prompts";

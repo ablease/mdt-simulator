@@ -26,7 +26,7 @@ export function NewMeetingPage({ step, draft: d, k, ready, running, hasRun, onRu
   const noKeys = !k.locked && !PIDS.some((pid) => k.keys[pid].trim());
 
   let body;
-  if (step === "case") body = <CasePanel caseId={d.caseId} caseText={d.caseText} onCase={d.chooseCase} onText={d.setCaseText} />;
+  if (step === "case") body = <CasePanel caseId={d.caseId} caseText={d.caseText} caseTag={d.caseTag} onCase={d.chooseCase} onText={d.setCaseText} onTag={d.setCaseTag} />;
   else if (step === "images") body = <CaseImages images={d.images} setImages={d.setImages} showAll={d.showAll} onShowAll={d.setShowAll} />;
   else if (step === "panel") body = (
     <SeatsPanel

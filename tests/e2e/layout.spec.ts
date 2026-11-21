@@ -106,9 +106,13 @@ test("the meeting carries on in the background and keeps its own copy of the cas
   await expect(details.locator(".seat-list b")).toHaveText(["Revision arthroplasty surgeon", "Consultant microbiologist", "Musculoskeletal radiologist", "Peri-operative physician / anaesthetist", "MDT chair"]);
 
   await page.click("#stopBtn");
-  await expect(session).toContainText("Stopped early");
   await expect(page.locator("#savers")).toBeVisible();
   mock.release();
+  // Some seats had answered, so it's saved, and the page becomes the saved copy.
+  await expect(page).toHaveURL(/#\/meeting\/[\w-]+$/);
+  await expect(session).toHaveCount(1);
+  await expect(session).not.toContainText("In progress");
+  await expect(details.locator(".case-copy")).toContainText("FICTIONAL TEST CASE 1");
 
   // The case and panel can be hidden, and the choice is remembered.
   const toggle = page.getByRole("button", { name: "Hide case and panel" });

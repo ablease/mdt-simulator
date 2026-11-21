@@ -2,8 +2,9 @@
 // classic scripts, as the original app did, but from this site rather than a CDN.
 import pdfmakeUrl from "pdfmake/build/pdfmake.min.js?url";
 import vfsUrl from "pdfmake/build/vfs_fonts.js?url";
-import type { MeetingRecord } from "../meeting/types";
-import { fileStem, saveBlob } from "./download";
+import type { MeetingRecord, SavedRecord } from "../meeting/types";
+import { buildComparison } from "./comparison";
+import { fileStem, saveBlob, today } from "./download";
 import { buildPdf } from "./pdfDocument";
 
 interface PdfMake {
@@ -56,4 +57,10 @@ export async function downloadPdf(rec: MeetingRecord) {
   await ensurePdfMake();
   const doc = window.pdfMake!.createPdf(buildPdf(rec));
   await new Promise<void>((res) => doc.getBlob((blob) => { saveBlob(blob, fileStem(rec) + ".pdf"); res(); }));
+}
+
+export async function downloadComparisonPdf(recs: SavedRecord[]) {
+  await ensurePdfMake();
+  const doc = window.pdfMake!.createPdf(buildComparison(recs));
+  await new Promise<void>((res) => doc.getBlob((blob) => { saveBlob(blob, "mdt-comparison-" + today() + ".pdf"); res(); }));
 }
