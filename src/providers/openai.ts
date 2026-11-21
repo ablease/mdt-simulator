@@ -1,4 +1,4 @@
-import { textOnly } from "./content";
+import { openaiContent } from "./content";
 import { httpError, ProviderError } from "./errors";
 import { readSSE } from "./sse";
 import type { Provider } from "./types";
@@ -24,7 +24,7 @@ export const openai: Provider = {
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST", signal,
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-      body: JSON.stringify({ model, stream: true, messages: [{ role: "user", content: textOnly(parts) }] }),
+      body: JSON.stringify({ model, stream: true, messages: [{ role: "user", content: openaiContent(parts) }] }),
     });
     if (!r.ok) throw await httpError(r);
     let text = "";
