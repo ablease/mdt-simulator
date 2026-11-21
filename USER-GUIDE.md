@@ -59,13 +59,43 @@ The simulator moved to mdt.ablease.co.uk in November 2026. Keys saved at the old
 ## Running a meeting
 
 1. Choose a test case, or **Blank case** to write your own. You can edit any case. Try changing one detail, such as the aspirate result, and run it again to see whether the panel changes its mind.
-2. Under **Who sits at the table**, tick the consultants you want. You need at least two. The chair always attends. Each seat can use the default model or one of its own.
-3. Choose one or two rounds of discussion.
-4. Press **Hold the meeting**. Answers appear as they're written. A full meeting takes a minute or two.
-5. Press **Stop** at any point to end the meeting early.
-6. When it's finished, download a **PDF** report or the **JSON** file. The JSON file holds every prompt and answer, which is useful for research analysis.
+2. If you like, add images. See the next section first.
+3. Under **Who sits at the table**, tick the consultants you want. You need at least two. The chair always attends. Each seat can use the default model or one of its own.
+4. Choose one or two rounds of discussion.
+5. Press **Hold the meeting**. Answers appear as they're written. A full meeting takes a minute or two.
+6. Press **Stop** at any point to end the meeting early.
+7. When it's finished, download a **PDF** report or the **JSON** file. The JSON file holds every prompt and answer, which is useful for research analysis. If you attached images, both files include them.
 
 Each card has a **Show the exact prompt sent** link, so you can see exactly what that consultant was asked.
+
+## Adding images
+
+You can attach X-rays, CT or MRI key slices, or clinical photos, up to 10 per case. Before the meeting, the radiologist looks at them and writes an imaging report. The other consultants read that report as part of the case.
+
+The report is labelled "AI image interpretation. Unvalidated, for research only." Both OpenAI and Anthropic say their models aren't designed to interpret specialised medical images such as CT or MRI scans. Bear that in mind when reading the report. How well it does is part of what your research can test.
+
+### Getting an image ready
+
+Use PNG or JPEG files. A screenshot or export from your image viewer works well. DICOM files can't be used yet, because they usually carry patient details inside the file. iPhone photos saved as HEIC need exporting as JPEG first.
+
+### Removing identifiers
+
+When you add an image, the simulator shrinks it and redraws it. That removes details hidden inside the file, such as when and where it was taken, and the file name is thrown away. What it can't do is notice text that's part of the picture. X-rays often have the patient's name, hospital number and date of birth printed in a corner. So for every image:
+
+1. Look over the whole image, especially the corners and edges.
+2. Press **Black out areas** and drag a box over anything that could identify the patient. Add as many boxes as you need. Without a mouse, press **Add box**, move it with the arrow keys, and hold Shift with the arrow keys to resize it.
+3. Press **Save**. The boxes are burned into the image and can't be taken off again. If you make a mistake, remove the image and add it again.
+4. Tick the box under the image to confirm you've checked it. The meeting won't start until every image is ticked, and changing an image clears its tick.
+
+Captions are sent with the images, so keep them anonymous too. Write "AP pelvis, 3 months ago" rather than a date.
+
+### Who sees the images
+
+Only the radiologist sees the images, unless you tick **Let every consultant see the images**. Then each consultant also gets them with their first opinion. That costs more, because every first-opinion call then includes the images.
+
+While images are attached, the radiologist always attends, and their seat needs a model that can read images. All Claude models can, and so can gpt-5. If the model can't, the radiologist's card says so and suggests another, and the meeting carries on without an imaging report.
+
+Images aren't saved yet. If you reload the page, you'll need to add them again.
 
 ## When something goes wrong
 
@@ -75,7 +105,8 @@ The simulator explains problems in plain words. The common ones:
 - **"rate limit or credit limit reached"**: you've run out of credit or hit your spending limit, or the account is new and has low limits. Add credit, wait a minute, or use fewer consultants on that company.
 - **"Couldn't reach OpenAI"** (or Anthropic): check your internet connection. Some hospital networks block AI services, so try from home if it keeps happening.
 - **"doesn't recognise that model name"**: press **Check** next to the key and pick a model from the list.
+- **"couldn't read the images"**: the radiologist's model can't take images. Choose one that can for the radiologist, such as gpt-5 or claude-sonnet-5-5, and run the meeting again.
 
 ## Coming later
 
-Attaching anonymised images to a case, and saving and backing up past meetings, are on the way. This guide will explain how to anonymise images and how to back up your meetings once those features arrive.
+Saving past meetings, and backing them up, are on the way. This guide will explain how to back up your meetings once that arrives.
