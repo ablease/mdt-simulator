@@ -1,7 +1,7 @@
 // Every image is redrawn through a canvas before use. The canvas output carries pixels only, so
 // EXIF (including GPS), comments and PNG text chunks are gone. The original file, and its name,
 // are never kept.
-import { fitWithin, sniff } from "./sniff";
+import { fitWithin, jpegHasMetadata, sniff } from "./sniff";
 import { JPEG_QUALITY, MAX_FILE_BYTES, MAX_LONG_EDGE, type Box, type ImageInput } from "./types";
 
 export class ImageError extends Error {}
@@ -96,3 +96,25 @@ export async function burnBoxes(dataUrl: string, width: number, height: number, 
 }
 
 export const dataUrlOf = (base64: string) => "data:image/jpeg;base64," + base64;
+
+// Checks an image restored from a backup. It's kept as it is if it's a plain JPEG within the size limit,
+// as this app saves them. Otherwise it's redrawn the same way as a new upload, dropping anything but the pixels.
+export async function cleanStoredImage(base64: string): Promise<{ base64: string; width: number; height: number }> {
+  const bytes = Uint8Array.from(atob(base64), (ch) => ch.charCodeAt(0));
+  if (sniff(bytes) !== "jpeg") throw new ImageError("An image in the backup isn't a JPEG.");
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(new Blob([bytes], { type: "image/jpeg" }), { imageOrientation: "from-image" });
+  } catch {
+    throw new ImageError("An image in the backup couldn't be opened. The file may be damaged.");
+  }
+  const { width, height } = bitmap;
+  if (!jpegHasMetadata(bytes) && Math.max(width, height) <= MAX_LONG_EDGE) {
+    bitmap.close();
+    return { base64, width, height };
+  }
+  const size = fitWithin(width, height, MAX_LONG_EDGE);
+  const out = drawScaled(bitmap, width, height, size.width, size.height);
+  bitmap.close();
+  return { base64: await toJpeg(out), width: size.width, height: size.height };
+}
